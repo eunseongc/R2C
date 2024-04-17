@@ -20,7 +20,7 @@ INSTRUCTION = "Write a high-quality answer for the given question using only the
 QUESTION_TEMPLATE = "Question: {}\nAnswer:"
 
 def get_prompt(ctxs, qas):
-    ctxs_formatted = [f"Document [{ctx['org_idx']}](Title: {ctx['title']}) {ctx['text']}" for ctx in qas['ctxs']]
+    ctxs_formatted = [f"Document [{ctx['org_idx']}](Title: {ctx['title']}) {ctx['text']}" for ctx in ctxs]
     prompt = INSTRUCTION + '\n\n' + '\n'.join(ctxs_formatted) + '\n\n' + QUESTION_TEMPLATE.format(qas['question'])
     return prompt
 
@@ -55,10 +55,8 @@ def main(args, logger):
     test_data = deepcopy(test_data_org)
     t5_tok = T5Tokenizer.from_pretrained('t5-base')
 
-    ctx_score_cumsum = 0.4
-    sent_low = 0.3
-    sent_high = 1.0
-    token_lamb = 0.95
+    if not args.comp_tok:
+        args.token_lamb = 1.0
 
     all_len_change_tracker = []
     start_time = time()
@@ -74,7 +72,7 @@ def main(args, logger):
         if args.comp_ctx:
             batch_scores, batch_token_ids, doc_indices_selected = compress_contexts(batch_scores,
                                                                                     batch_token_ids,
-                                                                                    ctx_score_cumsum,
+                                                                                    args.ctx_score_cumsum,
                                                                                     do_sort=args.do_sort_ctx)
             ctxs = [qas['ctxs'][i] for i in doc_indices_selected]
             compressed_prompt = get_prompt(ctxs, qas)
@@ -84,8 +82,8 @@ def main(args, logger):
             batch_scores, batch_token_ids, ctxs = compress_sentences(batch_scores,
                                              batch_token_ids,
                                              ctxs,
-                                             sent_low,
-                                             sent_high,
+                                             args.sent_low,
+                                             args.sent_high,
                                              t5_tok)
 
             compressed_prompt = get_prompt(ctxs, qas)
@@ -93,16 +91,15 @@ def main(args, logger):
 
         if args.comp_tok:
             ctxs = compress_tokens(batch_scores,
-                                         batch_token_ids,
-                                         ctxs,
-                                         token_lamb,
-                                         t5_tok)
+                                   batch_token_ids,
+                                   ctxs,
+                                   args.token_lamb,
+                                   t5_tok)
             
             compressed_prompt = get_prompt(ctxs, qas)
             len_change_tracker.append(len(chatgpt_tok.encode(compressed_prompt)))
 
         all_len_change_tracker.append(len_change_tracker)
-        
         compressed_prompt = get_prompt(ctxs, qas)
         qas['compressed_prompt'] = compressed_prompt
 
@@ -114,9 +111,7 @@ def main(args, logger):
     comp_avg_len = all_len_change_tracker[:, -1].mean()
     logger.info(f"Original avg_len: {org_avg_len:.2f} --> Compressed avg_len: {comp_avg_len:.2f}")
 
-
-
-    output_file_name = f"fid_doc{args.ctx_score_cumsum}_sl{sent_low}_sh{sent_high}_tl{token_lamb}.jsonl.gz"
+    output_file_name = f"fid_doc{args.ctx_score_cumsum}_sl{args.sent_low}_sh{args.sent_high}_tl{args.token_lamb}.jsonl.gz"
     output_path= os.path.join(args.output_root, f"nq_{args.n_contexts}", output_file_name)
     if not os.path.exists(os.path.dirname(output_path)):
         ## Consider if output_root also not exist.
