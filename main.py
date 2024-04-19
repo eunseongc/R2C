@@ -42,22 +42,30 @@ def main(args, logger):
     if args.use_token_scores:
         with open(args.token_scores_path, 'rb') as f:
             token_scores_list = pickle.load(f)
+    else:
+        ## Define FiD model to predict token_scores
+        raise NotImplementedError("Please provide token_scores_list or implement FiD model to predict token_scores")
 
     prompt_len_list_org = []
     for qas in test_data_org:
-        ctxs = [f"Document [{ctx['org_idx']}](Title: {ctx['title']}) {ctx['text']}" for ctx in qas['ctxs']]
-        prompt = INSTRUCTION + '\n\n' + '\n'.join(ctxs) + '\n\n' + QUESTION_TEMPLATE.format(qas['question'])
+        prompt = get_prompt(qas['ctxs'], qas)
         prompt_len_list_org.append(len(chatgpt_tok.encode(prompt)))
 
     org_avg_len = np.mean(prompt_len_list_org)
-    logger.info(f"Original avg_len: {org_avg_len:.2f}")
+    logger.info(f"> Original avg_len: {org_avg_len:.2f}")
 
     test_data = deepcopy(test_data_org)
     t5_tok = T5Tokenizer.from_pretrained('t5-base')
 
-    if not args.comp_tok:
-        args.token_lamb = 1.0
+    if not args.comp_ctx: args.ctx_score_cumsum = 1.0
+    if not args.comp_sent: args.sent_low, args.sent_high = 1.0, 1.0
+    if not args.comp_tok: args.tok_lamb = 1.0
 
+    if args.ctx_score_cumsum == 1.0: args.comp_ctx = False
+    if args.sent_low == 1.0 and args.sent_high == 1.0: args.comp_sent = False
+    if args.tok_lamb == 1.0: args.comp_tok = False
+
+    ## Start compressing
     all_len_change_tracker = []
     start_time = time()
     for qas_i, qas in enumerate(tqdm(test_data, dynamic_ncols=True)):
@@ -68,6 +76,8 @@ def main(args, logger):
             batch_scores, batch_token_ids = token_scores_list[qas_i]
             batch_scores = np.array(batch_scores) ## result shape: (20, max_len)
             batch_token_ids = batch_token_ids.squeeze().numpy() ## result shape: (20, max_len)
+        else:
+            pass
 
         if args.comp_ctx:
             batch_scores, batch_token_ids, doc_indices_selected = compress_contexts(batch_scores,
@@ -80,11 +90,11 @@ def main(args, logger):
 
         if args.comp_sent:
             batch_scores, batch_token_ids, ctxs = compress_sentences(batch_scores,
-                                             batch_token_ids,
-                                             ctxs,
-                                             args.sent_low,
-                                             args.sent_high,
-                                             t5_tok)
+                                                                     batch_token_ids,
+                                                                     ctxs,
+                                                                     args.sent_low,
+                                                                     args.sent_high,
+                                                                     t5_tok)
 
             compressed_prompt = get_prompt(ctxs, qas)
             len_change_tracker.append(len(chatgpt_tok.encode(compressed_prompt)))
@@ -93,7 +103,7 @@ def main(args, logger):
             ctxs = compress_tokens(batch_scores,
                                    batch_token_ids,
                                    ctxs,
-                                   args.token_lamb,
+                                   args.tok_lamb,
                                    t5_tok)
             
             compressed_prompt = get_prompt(ctxs, qas)
@@ -105,18 +115,36 @@ def main(args, logger):
 
     logger.info(f"Done compressing. time taken: {time() - start_time:.2f}s")
 
-    # logging len_change_tracker
-    all_len_change_tracker = np.array(all_len_change_tracker)
-    ## org_avg_len: {org_avg_len} --> comp_avg_len: {comp_avg_len}
-    comp_avg_len = all_len_change_tracker[:, -1].mean()
-    logger.info(f"Original avg_len: {org_avg_len:.2f} --> Compressed avg_len: {comp_avg_len:.2f}")
 
-    output_file_name = f"fid_doc{args.ctx_score_cumsum}_sl{args.sent_low}_sh{args.sent_high}_tl{args.token_lamb}.jsonl.gz"
-    output_path= os.path.join(args.output_root, f"nq_{args.n_contexts}", output_file_name)
+    ### logging len_change_tracker
+    all_len_change_tracker = np.array(all_len_change_tracker)
+    tracking_log_text = f"> Original avg_len: {org_avg_len:.2f} "
+    index, fields = 0, []
+    if args.comp_ctx:
+        fields.append(f"comp_ctx ({args.ctx_score_cumsum}): {all_len_change_tracker[:, index].mean():.2f}")
+        index += 1
+    if args.comp_sent:
+        fields.append(f"comp_sent({args.sent_low}-{args.sent_high}): {all_len_change_tracker[:, index].mean():.2f}")
+        index += 1
+    if args.comp_tok:
+        fields.append(f"comp_tok: {all_len_change_tracker[:, index].mean():.2f}")
+
+    if not fields:
+        raise ValueError("At least one compression method should be enabled")
+    tracking_log_text += " ".join(fields)
+    logger.info(tracking_log_text)
+
+
+    ### Save compressed data 
+    output_file_name = f"fid_ctx{args.ctx_score_cumsum}_sentFalse{args.sent_low}-{args.sent_high}_tok{args.tok_lamb}.jsonl.gz"
+    if args.output_root == "compressed_qa_data":
+        output_path = os.path.join(args.output_root, f"nq_{args.n_contexts}", output_file_name)
+    else:
+        output_path = os.path.join(args.output_root, output_file_name)
+
     if not os.path.exists(os.path.dirname(output_path)):
-        ## Consider if output_root also not exist.
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        
+    logger.info(f"> Saving compressed data to {output_path}")       
     with xopen(output_path, 'wt') as f:
         for qas in test_data:
             f.write(json.dumps(qas) + '\n')
@@ -149,7 +177,7 @@ if __name__ == "__main__":
 
     parser.add_argument('--comp_tok', action='store_true', default=False,
                         help="Whether to use token compression")
-    parser.add_argument('--token_lamb', type=float, default=0.95, required=False,
+    parser.add_argument('--tok_lamb', type=float, default=0.95, required=False,
                         help="Cumulative normalized sentence score to keep for the highest context")
 
     args = parser.parse_args()

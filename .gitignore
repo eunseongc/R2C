@@ -1,0 +1,9 @@
+# Files
+run.sh
+
+
+# Folders
+token_scores/
+compressed_qa_data/
+compressed_qa_predictions/
+qa_data/
