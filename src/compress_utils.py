@@ -3,7 +3,7 @@ import numpy as np
 
 from nltk import sent_tokenize
 
-def compress_contexts(batch_scores, batch_token_ids, ctx_score_cumsum: float, do_sort: bool):
+def compress_contexts(batch_scores, batch_token_ids, ctx_score_cumsum: float, do_sort_ctx: bool):
     ############################################
     ### Document compression using FiD score ###
     ############################################
@@ -14,6 +14,9 @@ def compress_contexts(batch_scores, batch_token_ids, ctx_score_cumsum: float, do
 
     cum_doc_index = np.where(doc_scores[doc_scores.argsort()[::-1]].cumsum() > ctx_score_cumsum)[0][0] + 1
     doc_indices_selected = np.argsort(doc_scores)[::-1][:cum_doc_index]
+    if not do_sort_ctx:
+        doc_indices_selected = np.sort(doc_indices_selected)
+
     batch_scores = batch_scores[doc_indices_selected] ## result shape: (cut_off, max_len)
     batch_token_ids = batch_token_ids[doc_indices_selected] ## result shape: (cut_off, max_len)
 

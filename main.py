@@ -32,12 +32,19 @@ def main(args, logger):
         with open(args.input_path, 'r') as f:
             for line in f:
                 test_data_org.append(json.loads(line))
+    elif args.input_path.endswith('.jsonl.gz'):
+        test_data_org = []
+        with xopen(args.input_path, 'r') as f:
+            for line in f:
+                test_data_org.append(json.loads(line))
     elif args.input_path.endswith('.json'):
         test_data_org = json.load(open(args.input_path))
-        for qas in test_data_org:
-            for c_i, ctx in enumerate(qas['ctxs']):
-                ctx['isgold'] = False
-                ctx['org_idx'] =  c_i + 1
+    else:
+        raise ValueError("Please provide a valid input file path")
+
+    for qas in test_data_org:
+        for c_i, ctx in enumerate(qas['ctxs']):
+            ctx['org_idx'] =  c_i + 1
 
     if args.use_token_scores:
         with open(args.token_scores_path, 'rb') as f:
@@ -83,7 +90,7 @@ def main(args, logger):
             batch_scores, batch_token_ids, doc_indices_selected = compress_contexts(batch_scores,
                                                                                     batch_token_ids,
                                                                                     args.ctx_score_cumsum,
-                                                                                    do_sort=args.do_sort_ctx)
+                                                                                    do_sort_ctx=args.do_sort_ctx)
             ctxs = [qas['ctxs'][i] for i in doc_indices_selected]
             compressed_prompt = get_prompt(ctxs, qas)
             len_change_tracker.append(len(chatgpt_tok.encode(compressed_prompt)))
@@ -136,7 +143,7 @@ def main(args, logger):
 
 
     ### Save compressed data 
-    output_file_name = f"fid_ctx{args.ctx_score_cumsum}_sentFalse{args.sent_low}-{args.sent_high}_tok{args.tok_lamb}.jsonl.gz"
+    output_file_name = f"fid_ctx{args.comp_ctx}{args.ctx_score_cumsum}_sent{args.comp_sent}{args.sent_low}-{args.sent_high}_tok{args.comp_tok}{args.tok_lamb}.jsonl.gz"
     if args.output_root == "compressed_qa_data":
         output_path = os.path.join(args.output_root, f"nq_{args.n_contexts}", output_file_name)
     else:
