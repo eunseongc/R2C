@@ -3,22 +3,30 @@ import numpy as np
 
 from nltk import sent_tokenize
 
+
+
+def get_ctx_scores(batch_scores):
+    ctx_scores = []
+    for scores in batch_scores:
+        ctx_scores.append(scores[scores != 0].mean())
+    norm_ctx_scores = np.array(ctx_scores) / np.sum(ctx_scores)
+    return norm_ctx_scores
+
+
 def compress_contexts(batch_scores, batch_token_ids, ctx_score_cumsum: float, do_sort_ctx: bool):
     ############################################
-    ### Document compression using FiD score ###
+    ### Context compression using FiD score ###
     ############################################
-    doc_scores = []
-    for scores in batch_scores:
-        doc_scores.append(scores[scores != 0].mean())
-    doc_scores = np.array(doc_scores) / np.sum(doc_scores)
 
-    cum_doc_index = np.where(doc_scores[doc_scores.argsort()[::-1]].cumsum() > ctx_score_cumsum)[0][0] + 1
-    doc_indices_selected = np.argsort(doc_scores)[::-1][:cum_doc_index]
+    norm_ctx_scores = get_ctx_scores(batch_scores)
+
+    cum_ctx_index = np.where(norm_ctx_scores[norm_ctx_scores.argsort()[::-1]].cumsum() > ctx_score_cumsum)[0][0] + 1
+    ctx_indices_selected = np.argsort(norm_ctx_scores)[::-1][:cum_ctx_index]
     if not do_sort_ctx:
-        doc_indices_selected = np.sort(doc_indices_selected)
+        ctx_indices_selected = np.sort(ctx_indices_selected)
 
-    batch_scores = batch_scores[doc_indices_selected] ## result shape: (cut_off, max_len)
-    batch_token_ids = batch_token_ids[doc_indices_selected] ## result shape: (cut_off, max_len)
+    batch_scores = batch_scores[ctx_indices_selected] ## result shape: (cut_off, max_len)
+    batch_token_ids = batch_token_ids[ctx_indices_selected] ## result shape: (cut_off, max_len)
 
     ## [ES] batch_len_context is not used
     batch_context_start_idx, batch_eos_token_idx, batch_len_context = [], [], []
@@ -32,7 +40,7 @@ def compress_contexts(batch_scores, batch_token_ids, ctx_score_cumsum: float, do
     batch_scores_selected = [batch_scores[i][context_start_idx:eos_token_idx] for i, (context_start_idx, eos_token_idx) in enumerate(zip(batch_context_start_idx, batch_eos_token_idx))]
     batch_token_ids_selected = [batch_token_ids[i][context_start_idx:eos_token_idx] for i, (context_start_idx, eos_token_idx) in enumerate(zip(batch_context_start_idx, batch_eos_token_idx))]
 
-    return batch_scores_selected, batch_token_ids_selected, doc_indices_selected, 
+    return batch_scores_selected, batch_token_ids_selected, ctx_indices_selected, 
 
 
 def compress_sentences(batch_scores, batch_token_ids, ctxs, sent_low, sent_high, tokenizer):
@@ -123,90 +131,9 @@ def compress_tokens(batch_scores, batch_token_ids, ctxs, token_lamb, tokenizer):
     ## [ES] Should I return batch_token_scores, batch_token_ids too?
     return ctxs
 
-# sent_high = 1.0
-# sent_low_list = [0.3]
-# token_lamb_list = [1.0]
 
-# for doc_score_cumsum in doc_score_cumsum_list:
-#     for sent_low in sent_low_list:
-#         for token_lamb in token_lamb_list:
-#             len_changes = []
-#             ctxs_len_list = []
-#             for qas_i, (batch_scores, batch_token_ids) in enumerate(tqdm(token_scores_list_org)):
-                
-#                 #####################
-#                 qas = test[qas_i]
-#                 ctxs = qas['ctxs']
-#                 sent_mean_score_ctxs = []
-#                 sent_scores_ctxs = []
-#                 sent_token_ids_ctxs = []
-
-#                 doc_scores = []
-#                 for scores in np.array(batch_scores):
-#                     doc_scores.append(scores[scores != 0].mean())
-#                 doc_scores = np.array(doc_scores) / np.sum(doc_scores)
-
-#                 sents_list = [sent_tokenize(ctx['text']) for ctx in ctxs]
-#                 for context_score, context_ids, sents in zip(np.array(batch_scores), batch_token_ids.squeeze().numpy(), sents_list):
-#                     sent_len_list = [len(tokens_sent) for tokens_sent in t5_tok.batch_encode_plus(sents, add_special_tokens=False)['input_ids']]
-#                     cum_len_list = [sum(sent_len_list[:i+1]) for i in range(len(sent_len_list))]
-#                     start_idx = 0
-#                     sent_mean_score_ctx = []
-#                     sent_scores_ctx = []
-#                     sent_token_idx_ctx = []
-#                     for cum_len in cum_len_list:
-#                         if start_idx >= context_score.shape[0]:
-#                             continue
-#                         sent_mean_score_ctx.append(np.mean(context_score[start_idx:cum_len]))
-#                         sent_scores_ctx.append(context_score[start_idx:cum_len])
-#                         sent_token_idx_ctx.append(context_ids[start_idx:cum_len])
-#                         ## Update     
-#                         start_idx = cum_len
-                    
-#                     sent_mean_score_ctxs.append(np.array(sent_mean_score_ctx))
-#                     sent_scores_ctxs.append(sent_scores_ctx)
-#                     sent_token_ids_ctxs.append(sent_token_idx_ctx)
-
-#                 d_g, s_g, d_e, s_e = gini(doc_scores), gini(np.sort(np.concatenate(sent_mean_score_ctxs)/np.sum(np.concatenate(sent_mean_score_ctxs)))), entropy(doc_scores), entropy(np.sort(np.concatenate(sent_mean_score_ctxs)/np.sum(np.concatenate(sent_mean_score_ctxs))))
-#                 # if d_g < 0.20811377566121111:
-#                 if d_g < 0.2332994939256315:
-#                     doc_score_cumsum = 0.3
-#                     sent_low = 0.7
-#                 else:
-#                     doc_score_cumsum = 0.4
-#                     sent_low = 0.5
-                
-#                 # # if s_g < 0.6489349705185483:
-#                 #     # sent_low =     
-#                 # #############################
-                
-                
-#                 len_change = []
-#                 qas = test[qas_i]
-                
-#                 batch_scores = np.array(batch_scores) ## result shape: (20, max_len)
-#                 batch_token_ids = batch_token_ids.squeeze().numpy() ## result shape: (20, max_len)
-
-#                 ## Current length
-#                 text_list = [f"Document [{ctx['org_idx']}](Title: {ctx['title']}) {ctx['text']}" for ctx in qas['ctxs']]
-#                 org_prompt = INSTRUCTION + '\n\n' + '\n'.join(text_list) + '\n\n' + QUESTION_TEMPLATE.format(qas['question'])
-                
-#                 len_change.append(len(chatgpt_tok.encode(org_prompt)))
-
-                
-                
-
-
-#             doc_len_list, sent_len_list, tok_len_list = [], [], []
-#             for len_change in len_changes:
-#                 _, doc, sent, tok = len_change
-#                 doc_len_list.append(doc)
-#                 sent_len_list.append(sent)
-#                 tok_len_list.append(tok)
-#             print(f"[doc_score_cumsum: {doc_score_cumsum}, sent_low: {sent_low}, sent_high: {sent_high}, token_lamb: {token_lamb}] Org. len: {int(org_avg_len)}, doc_comp: {int(np.mean(doc_len_list))} ({100 * np.mean(doc_len_list)/org_avg_len:.2f}%, avg #: {np.mean(ctxs_len_list):.1f}), sent_comp: {int(np.mean(sent_len_list))} ({100 * np.mean(sent_len_list)/org_avg_len:.2f}%), tok_comp: {int(np.mean(tok_len_list))} ({100 * np.mean(tok_len_list)/org_avg_len:.2f}%)")
-
-#             # with xopen(f'../lost-in-the-middle/qa_data/20_total_documents/dpr_20_0407/nq-open-dpr_20_fid_doc0.0_sl0.0_sh1.0_tl{token_lamb}_0.70.5.jsonl.gz', 'wt') as f:
-#             with xopen(f'../lost-in-the-middle/qa_data/20_total_documents/nq-open-20_total_documents_fid_doc0.0_sl0.0_sh1.0_tl{token_lamb}_0.70.5.jsonl.gz', 'wt') as f:
-#             # with xopen(f'../lost-in-the-middle/qa_data/20_total_documents/dpr_20_0409/nq-open-dpr_20_fid_doc{doc_score_cumsum}_sl{sent_low}_sh{sent_high}_tl{token_lamb}.jsonl.gz', 'wt') as f:
-#                 for qas in test:
-#                     f.write(json.dumps(qas) + '\n')
+def gini(x):
+    mean_absolute_diff = np.abs(np.subtract.outer(x, x)).mean()
+    relative_mean_absolute_diff = mean_absolute_diff/np.mean(x)
+    g = 0.5 * relative_mean_absolute_diff
+    return g

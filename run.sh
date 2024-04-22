@@ -1,31 +1,16 @@
-# for ctx_score_cumsum in 0.3
-# do
-#     for sent_low in 0.6 0.7 0.8
-#     do
-#         python main.py --input_path qa_data/20_gold_at_0.jsonl.gz \
-#                        --output_root compressed_qa_data/20_gold_at_0 \
-#                        --use_token_scores \
-#                        --token_scores_path token_scores/token_scores_list_20_documents_gold_at_0_oneContextFalse.pkl \
-#                        --comp_ctx \
-#                        --ctx_score_cumsum ${ctx_score_cumsum} \
-#                        --do_sort_ctx \
-#                        --comp_sent \
-#                        --sent_low ${sent_low}
-#     done
-# done
+data=dpr_nq_20
+input_file="test_20.json"
+token_scores_file="token_scores_list_dpr_20_oneContextFalse.pkl"
 
-# Original avg_len: 2949.10 comp_ctx (0.3): 503.34 comp_sent(0.6-1.0): 352.62
-# Original avg_len: 2949.10 comp_ctx (0.3): 503.34 comp_sent(0.7-1.0): 378.24
-# Original avg_len: 2949.10 comp_ctx (0.3): 503.34 comp_sent(0.8-1.0): 410.65
 
 for ctx_score_cumsum in 0.4
 do
-    for sent_low in 0.2 0.3 0.4 0.5 
+    for sent_low in 0.1 0.2 0.3 0.4 0.5 0.6
     do
-        python main.py --input_path qa_data/20_gold_at_0.jsonl.gz \
-                       --output_root compressed_qa_data/20_gold_at_0 \
+        python main.py --input_path qa_data/${input_file} \
+                       --output_root compressed_qa_data/${data} \
                        --use_token_scores \
-                       --token_scores_path token_scores/token_scores_list_20_documents_gold_at_0_oneContextFalse.pkl \
+                       --token_scores_path token_scores/${token_scores_file} \
                        --comp_ctx \
                        --ctx_score_cumsum ${ctx_score_cumsum} \
                        --do_sort_ctx \
@@ -34,7 +19,22 @@ do
     done
 done
 
-# Original avg_len: 2949.10 comp_ctx (0.4): 743.10 comp_sent(0.2-1.0): 407.10
-# Original avg_len: 2949.10 comp_ctx (0.4): 743.10 comp_sent(0.3-1.0): 427.13
-# Original avg_len: 2949.10 comp_ctx (0.4): 743.10 comp_sent(0.4-1.0): 454.66
-# Original avg_len: 2949.10 comp_ctx (0.4): 743.10 comp_sent(0.5-1.0): 485.33
+#  f"fid_gini{args.ctx_gini_standard}_ctx{args.ctx_score_cumsum_gini_low}-{args.ctx_score_cumsum_gini_high}_sent{args.sent_low_gini_high}-{args.sent_low_gini_low}.jsonl.gz"
+
+
+# for ctx_gini_standard in 0.05 0.15
+# do
+#     python main.py --input_path qa_data/${input_file} \
+#                    --output_root compressed_qa_data/${data} \
+#                    --use_token_scores \
+#                    --token_scores_path token_scores/${token_scores_file} \
+#                    --use_gini \
+#                    --ctx_gini_standard ${ctx_gini_standard} \
+#                    --ctx_score_cumsum_gini_low 0.3 \
+#                    --ctx_score_cumsum_gini_high 0.4 \
+#                    --sent_low_gini_high 0.8 \
+#                    --sent_low_gini_low 0.3 \
+#                    --comp_ctx \
+#                    --do_sort_ctx \
+#                    --comp_sent
+# done

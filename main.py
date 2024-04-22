@@ -14,6 +14,7 @@ from copy import deepcopy
 from tqdm import tqdm
 from src.compress_utils import *
 from transformers import T5Tokenizer
+from IPython import embed
 
 
 INSTRUCTION = "Write a high-quality answer for the given question using only the provided search results (some of which might be irrelevant)."
@@ -59,7 +60,6 @@ def main(args, logger):
         prompt_len_list_org.append(len(chatgpt_tok.encode(prompt)))
 
     org_avg_len = np.mean(prompt_len_list_org)
-    logger.info(f"> Original avg_len: {org_avg_len:.2f}")
 
     test_data = deepcopy(test_data_org)
     t5_tok = T5Tokenizer.from_pretrained('t5-base')
@@ -68,9 +68,15 @@ def main(args, logger):
     if not args.comp_sent: args.sent_low, args.sent_high = 1.0, 1.0
     if not args.comp_tok: args.tok_lamb = 1.0
 
-    if args.ctx_score_cumsum == 1.0: args.comp_ctx = False
-    if args.sent_low == 1.0 and args.sent_high == 1.0: args.comp_sent = False
+    if args.ctx_score_cumsum == 1.0 and not args.use_gini: args.comp_ctx = False
+    if args.sent_low == 1.0 and args.sent_high == 1.0 and not args.use_gini: args.comp_sent = False
     if args.tok_lamb == 1.0: args.comp_tok = False
+
+    logger.info("###################################################")
+    logger.info(f"> Start compressing {args.input_path}")
+    logger.info(f"> Original avg_len: {org_avg_len:.2f}")
+    logger.info(f"> comp_ctx: {args.comp_ctx}, comp_sent: {args.comp_sent}, comp_tok: {args.comp_tok}")
+    logger.info(f"> ctx_score_cumsum: {args.ctx_score_cumsum}, sent_low: {args.sent_low}, sent_high: {args.sent_high}, tok_lamb: {args.tok_lamb}")
 
     ## Start compressing
     all_len_change_tracker = []
@@ -85,13 +91,24 @@ def main(args, logger):
             batch_token_ids = batch_token_ids.squeeze().numpy() ## result shape: (20, max_len)
         else:
             pass
+    
+        ## If using gini index, set args.ctx_score_cumsum & args.sent_low
+        if args.use_gini:
+            norm_ctx_scores = get_ctx_scores(batch_scores)
+            ctx_gini = gini(norm_ctx_scores)
+            if ctx_gini > args.ctx_gini_standard: ## High inequality --> high compression ratio for contexts
+                args.ctx_score_cumsum = args.ctx_score_cumsum_gini_low ## 0.3
+                args.sent_low = args.sent_low_gini_high ## 0.8
+            else:
+                args.ctx_score_cumsum = args.ctx_score_cumsum_gini_high ## 0.4
+                args.sent_low = args.sent_low_gini_low ## 0.3
 
         if args.comp_ctx:
-            batch_scores, batch_token_ids, doc_indices_selected = compress_contexts(batch_scores,
+            batch_scores, batch_token_ids, ctx_indices_selected = compress_contexts(batch_scores,
                                                                                     batch_token_ids,
                                                                                     args.ctx_score_cumsum,
                                                                                     do_sort_ctx=args.do_sort_ctx)
-            ctxs = [qas['ctxs'][i] for i in doc_indices_selected]
+            ctxs = [qas['ctxs'][i] for i in ctx_indices_selected]
             compressed_prompt = get_prompt(ctxs, qas)
             len_change_tracker.append(len(chatgpt_tok.encode(compressed_prompt)))
 
@@ -115,13 +132,12 @@ def main(args, logger):
             
             compressed_prompt = get_prompt(ctxs, qas)
             len_change_tracker.append(len(chatgpt_tok.encode(compressed_prompt)))
-
+        
         all_len_change_tracker.append(len_change_tracker)
         compressed_prompt = get_prompt(ctxs, qas)
         qas['compressed_prompt'] = compressed_prompt
 
     logger.info(f"Done compressing. time taken: {time() - start_time:.2f}s")
-
 
     ### logging len_change_tracker
     all_len_change_tracker = np.array(all_len_change_tracker)
@@ -141,9 +157,11 @@ def main(args, logger):
     tracking_log_text += " ".join(fields)
     logger.info(tracking_log_text)
 
-
-    ### Save compressed data 
-    output_file_name = f"fid_ctx{args.comp_ctx}{args.ctx_score_cumsum}_sent{args.comp_sent}{args.sent_low}-{args.sent_high}_tok{args.comp_tok}{args.tok_lamb}.jsonl.gz"
+    ### Save compressed data
+    if args.use_gini:
+        output_file_name = f"fid_gini{args.ctx_gini_standard}_ctx{args.ctx_score_cumsum_gini_low}-{args.ctx_score_cumsum_gini_high}_sent{args.sent_low_gini_high}-{args.sent_low_gini_low}.jsonl.gz"
+    else:
+        output_file_name = f"fid_ctx{args.comp_ctx}{args.ctx_score_cumsum}_sent{args.comp_sent}{args.sent_low}-{args.sent_high}_tok{args.comp_tok}{args.tok_lamb}.jsonl.gz"
     if args.output_root == "compressed_qa_data":
         output_path = os.path.join(args.output_root, f"nq_{args.n_contexts}", output_file_name)
     else:
@@ -167,7 +185,22 @@ if __name__ == "__main__":
                         help="Whether to use token_scores_list predicted in advance")
     parser.add_argument('--token_scores_path', type=str, default="open_domain_data/nq/test_sent_20_192_nltk.json", required=False,
                         help="A path of token scores containing a list of tuples of ((input_ids, scores))") ## e.g., open_domain_data/nq/test_sent_20_192_nltk.json
+    parser.add_argument('--use_gini', action='store_true', default=False,
+                        help="Whether to use gini index of ctx scores")
+    parser.add_argument('--ctx_gini_standard', type=float, default=0.4, required=False,
+                        help="Gini index standard to adjust compression ratios")
+    parser.add_argument('--ctx_score_cumsum_gini_low', type=float, default=0.3, required=False,
+                        help="Gini index standard to adjust compression ratios")
+    parser.add_argument('--ctx_score_cumsum_gini_high', type=float, default=0.4, required=False,
+                        help="Gini index standard to adjust compression ratios")
+    parser.add_argument('--sent_low_gini_low', type=float, default=0.3, required=False,
+                        help="Gini index standard to adjust compression ratios")
+    parser.add_argument('--sent_low_gini_high', type=float, default=0.8, required=False,
+                        help="Gini index standard to adjust compression ratios")
+
     
+
+
     parser.add_argument('--comp_ctx', action='store_true', default=False,
                         help="Whether to use context compression")
     parser.add_argument('--do_sort_ctx', action='store_true', default=False,
@@ -189,8 +222,10 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     
+    ## Write logger.info into log.txt
     logger = logging.getLogger(__name__)
-    handlers = [logging.StreamHandler(sys.stdout)]
+    # handler = logging.FileHandler("log.txt")
+    handlers = [logging.FileHandler("log.txt"), logging.StreamHandler(sys.stdout)]
     logging.basicConfig(
         datefmt="%m/%d/%Y %H:%M:%S",
         level=logging.INFO,
@@ -199,4 +234,5 @@ if __name__ == "__main__":
     )
 
     main(args, logger)
+    logger.info("###################################################")
     
