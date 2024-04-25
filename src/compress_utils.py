@@ -2,7 +2,13 @@ import re
 import numpy as np
 
 from nltk import sent_tokenize
+from IPython import embed
 
+def gini(x):
+    mean_absolute_diff = np.abs(np.subtract.outer(x, x)).mean()
+    relative_mean_absolute_diff = mean_absolute_diff/np.mean(x)
+    g = 0.5 * relative_mean_absolute_diff
+    return g
 
 
 def get_ctx_scores(batch_scores):
@@ -32,11 +38,11 @@ def compress_contexts(batch_scores, batch_token_ids, ctx_score_cumsum: float, do
     batch_context_start_idx, batch_eos_token_idx, batch_len_context = [], [], []
     for token_ids in batch_token_ids:
         context_start_idx = np.where(token_ids == 2625)[0][0] + 2    
-        eos_token_idx = np.where(token_ids == 1)[0][0]
+        eos_token_idx = np.where(token_ids == 1)[0][-1]
         batch_context_start_idx.append(context_start_idx)
         batch_eos_token_idx.append(eos_token_idx)
         batch_len_context.append(eos_token_idx - context_start_idx)
-        
+
     batch_scores_selected = [batch_scores[i][context_start_idx:eos_token_idx] for i, (context_start_idx, eos_token_idx) in enumerate(zip(batch_context_start_idx, batch_eos_token_idx))]
     batch_token_ids_selected = [batch_token_ids[i][context_start_idx:eos_token_idx] for i, (context_start_idx, eos_token_idx) in enumerate(zip(batch_context_start_idx, batch_eos_token_idx))]
 
@@ -54,7 +60,11 @@ def compress_sentences(batch_scores, batch_token_ids, ctxs, sent_low, sent_high,
 
     sents_list = [sent_tokenize(ctx['text']) for ctx in ctxs]
     for context_score, context_ids, sents in zip(batch_scores, batch_token_ids, sents_list):
-        sent_len_list = [len(tokens_sent) for tokens_sent in tokenizer.batch_encode_plus(sents, add_special_tokens=False)['input_ids']]
+        try:
+            sent_len_list = [len(tokens_sent) for tokens_sent in tokenizer.batch_encode_plus(sents, add_special_tokens=False)['input_ids']]
+        except:
+            from IPython import embed; embed()
+
         cum_len_list = [sum(sent_len_list[:i+1]) for i in range(len(sent_len_list))]
         start_idx = 0
         sent_mean_score_ctx = []
@@ -68,11 +78,11 @@ def compress_sentences(batch_scores, batch_token_ids, ctxs, sent_low, sent_high,
             sent_token_idx_ctx.append(context_ids[start_idx:cum_len])
             ## Update     
             start_idx = cum_len
-        
+
         sent_mean_score_ctxs.append(np.array(sent_mean_score_ctx))
         sent_scores_ctxs.append(sent_scores_ctx)
         sent_token_ids_ctxs.append(sent_token_idx_ctx)
-        
+
     new_token_ids_ctxs = []
     new_scores_ctxs = []
     grad_comp_ratio_sent = np.linspace(sent_low, sent_high, len(ctxs ))[::-1]
@@ -130,10 +140,3 @@ def compress_tokens(batch_scores, batch_token_ids, ctxs, token_lamb, tokenizer):
 
     ## [ES] Should I return batch_token_scores, batch_token_ids too?
     return ctxs
-
-
-def gini(x):
-    mean_absolute_diff = np.abs(np.subtract.outer(x, x)).mean()
-    relative_mean_absolute_diff = mean_absolute_diff/np.mean(x)
-    g = 0.5 * relative_mean_absolute_diff
-    return g
