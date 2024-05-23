@@ -39,6 +39,26 @@ _dict = {
     "repobench-p": "{compressed_prompt}{question}"
 }
 
+
+_dict_wo_instruction = {
+    "narrativeqa": "{compressed_prompt}\n\nNow, answer the question based on the story asconcisely as you can, using a single phrase if possible. Do not provide any explanation.\n\nQuestion: {question}",
+    "qasper": "{compressed_prompt}\n\n Answer the question based on the above article as concisely as you can, using a single phrase or sentence if possible. If the question cannot be answered based on the information in the article, write \"unanswerable\". If the question is a yes/no question, answer \"yes\", \"no\", or \"unanswerable\". Do not provide any explanation.\n\nQuestion: {question}",
+    "multifieldqa_en": "{compressed_prompt}\n\nNow, answer the following question based on the above text, only give me the answer and do not output any other words.\n\nQuestion: {question}",
+    "hotpotqa": "{compressed_prompt}\n\nAnswer the question based on the given passages. Only give me the answer and do not output any other words.\n\nQuestion: {question}",
+    "2wikimqa": "{compressed_prompt}\n\nAnswer the question based on the given passages. Only give me the answer and do not output any other words.\n\nQuestion: {question}",
+    "musique": "{compressed_prompt}\n\nAnswer the question based on the given passages. Only give me the answer and do not output any other words.\n\nQuestion: {question}",
+    "gov_report": "{compressed_prompt}",
+    "qmsum": "{compressed_prompt}\n\nNow, answer the query based on the above meeting transcript in one or more sentences.\n\nQuery: {question}",
+    "multi_news": "{compressed_prompt}",
+    "trec": "{compressed_prompt}\n{question}",
+    "triviaqa": "{compressed_prompt}\n\n{question}",
+    "samsum": "{compressed_prompt}\n\n{question}",
+    "passage_count": "{compressed_prompt}",
+    "passage_retrieval_en": "{compressed_prompt}\n\nThe following is an abstract.\n\n{question}",
+    "lcc": "{compressed_prompt}",
+    "repobench-p": "{compressed_prompt}{question}"
+}
+
 def get_prompt(ctxs, qas, dataset, use_org_idx=True):
     if 'longbench' in dataset:
         dataname = '_'.join(dataset.split('_')[1:])
@@ -54,7 +74,8 @@ def get_prompt(ctxs, qas, dataset, use_org_idx=True):
             else:
                 prompt = prompt + '\n' + ctx['text']
                 cur_ctx_id = int(ctx['id'].split('-')[0])
-        prompt = _dict[dataname].format(compressed_prompt=prompt, question=qas['question'])
+        # prompt = _dict[dataname].format(compressed_prompt=prompt, question=qas['question'])
+        prompt = _dict_wo_instruction[dataname].format(compressed_prompt=prompt, question=qas['question'])
         # prompt = prompt.strip('\n') + "\n\n" + qas['question']
         # prompt = "\n".join([ctx['text'] for ctx in ctxs] + [qas['question']])
     else:
@@ -164,10 +185,10 @@ def main(args, logger):
             if args.use_gini:
                 norm_ctx_scores = get_ctx_scores(batch_scores, batch_token_ids, args.ctx_score_mode, args.question_mode, args.include_end_token, t5_tok, pattern_str)
                 ctx_gini = gini(norm_ctx_scores)
-                if ctx_gini > 0.27: ## High inequality --> high compression ratio for contexts
-                    compression_ratio = 0.1
+                if ctx_gini > 0.4: ## High inequality --> high compression ratio for contexts
+                    compression_ratio = 0.15
                 else:
-                    compression_ratio = 0.4 ## 0.4
+                    compression_ratio = 0.3 ## 0.4
             else:
                 sent_comp_ratio = args.sent_comp_ratio
 
@@ -190,7 +211,7 @@ def main(args, logger):
                 len_change_tracker.append(len_after_ctx_comp)
 
             if args.comp_sent:
-                # sent_comp_len = len_after_ctx_comp - args.target_length
+                sent_comp_len = len_after_ctx_comp - args.target_length
                 batch_scores, batch_token_ids, ctxs = compress_sentences(batch_scores,
                                                                          batch_token_ids,
                                                                          t5_tok,
@@ -204,7 +225,7 @@ def main(args, logger):
                 compressed_prompt = get_prompt(ctxs, qas, args.dataset, args.use_org_idx)
                 len_after_sent_comp = len(chatgpt_tok.encode(compressed_prompt))
                 len_change_tracker.append(len_after_sent_comp)
-            # embed()
+
             # print(f"{len_org_prompt} {len_after_ctx_comp} {len_after_sent_comp}")
             if args.comp_tok:
                 ctxs = compress_tokens(batch_scores,

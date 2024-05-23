@@ -82,7 +82,6 @@ def compress_contexts(args, batch_scores, batch_token_ids, tokenizer, ctxs, ctx_
     ctx_score_mode=args.ctx_score_mode
     question_mode=args.question_mode
     include_end_token=args.include_end_token
-    
     norm_ctx_scores = get_ctx_scores(batch_scores, batch_token_ids, ctx_score_mode, question_mode, include_end_token, tokenizer, pattern_str)
     ctx_indices_sorted = np.argsort(norm_ctx_scores)[::-1].tolist()
     len_total = 0
@@ -133,6 +132,15 @@ def compress_sentences(batch_scores, batch_token_ids, tokenizer, ctxs, ctx_indic
     batch_scores_context = [batch_scores[i][ctx_start_idx:eos_token_idx] for i, eos_token_idx in enumerate(batch_eos_token_idx)]
     batch_token_ids_context = [batch_token_ids[i][ctx_start_idx:eos_token_idx] for i, eos_token_idx in enumerate(batch_eos_token_idx)]
 
+    ## split before sent_tokenize
+    # sents_list = []
+    # for ctx in ctxs:
+    #     lines = ctx['text'].split('\n')
+    #     sents = []
+    #     for line in lines:
+    #         sents.extend(sent_tokenize(line))
+    #     sents_list.append(sents)
+
     sents_list = [sent_tokenize(ctx['text']) for ctx in ctxs]
     split_token_ctxs = []
     for ctx_i, ctx in enumerate(ctxs):
@@ -179,13 +187,22 @@ def compress_sentences(batch_scores, batch_token_ids, tokenizer, ctxs, ctx_indic
     else:
         comp_len_per_ctx = [int(sent_comp_len / num_ctxs) for _ in range(num_ctxs)]
         
-    new_token_ids_ctxs = []
-    new_scores_ctxs = []
+    new_token_ids_ctxs = {}
+    new_scores_ctxs = {}
     rank_map = {ctx_i: rank for rank, ctx_i in enumerate(ctx_indices_sorted)}
-    cur_ctx_indices = [ctx['org_idx'] - 1 for ctx in ctxs]
+    ctx_idx2ctx_i = {ctx['org_idx'] - 1: i for i, ctx in enumerate(ctxs)}
+
     total_comp_len = 0
     # for i, idx in enumerate(cur_ctx_indices):
-    for i, idx in reversed(list(enumerate(cur_ctx_indices))):
+    reversed_ctx_indices_sorted = list(reversed(ctx_indices_sorted))
+
+    ## idx -> ctx_idx / i --> cur_i
+    # for i, idx in reversed(list(enumerate(cur_ctx_indices))):
+    ctx_removal_indices = []
+    for idx in reversed_ctx_indices_sorted:
+        rank = rank_map[idx]
+        i = ctx_idx2ctx_i[idx]
+
         sent_mean_score_ctx = sent_mean_score_ctxs[i]
         sents = sents_list[i]
         if len(sent_mean_score_ctx) != len(sents):
@@ -195,11 +212,11 @@ def compress_sentences(batch_scores, batch_token_ids, tokenizer, ctxs, ctx_indic
             
         rank = rank_map[idx]
         comp_len = comp_len_per_ctx[rank]
-        
         argsort_sent = np.argsort(sent_mean_score_ctx) ## Descending order
         cur_comp_len = 0
 
         if total_comp_len >= sent_comp_len or comp_len == 0:
+            # print(f'comp_len is 0, skip {rank}th context. out of {num_ctxs} contexts. / total_comp_len: {total_comp_len} / sent_comp_len: {sent_comp_len}')
             r = 0
         else:
             for r, sent_index in enumerate(argsort_sent):
@@ -208,24 +225,45 @@ def compress_sentences(batch_scores, batch_token_ids, tokenizer, ctxs, ctx_indic
                 total_comp_len += cur_sent_len
                 if total_comp_len >= sent_comp_len or cur_comp_len >= comp_len:
                     break
-        
-            ### at last 1 sentence should be included
-            if r == len(sents) - 1:
+
+            # ### at last 1 sentence should be included
+            r = r + 1 ## TEMPORAL FOR 0523
+            # if r == len(sents) - 1:
+            #     if rank == 0:
+            #         pass
+            #     else:
+            #         cur_comp_len = cur_comp_len - cur_sent_len ## We don't want to include the last sentence
+            #         total_comp_len -= cur_sent_len
+            #         ## Increase the comp_len of lower ranked context
+            #         comp_len_per_ctx[rank-1] += comp_len - cur_comp_len
+            # else:
+            #     r = r + 1
+
+            ### Dealing exceed cur_comp_len --> reduce comp_len from the top ranked context
+            if cur_comp_len > comp_len:
+                exceed_len = cur_comp_len - comp_len
+                ## iterate from the top ranked context
+                for rank, comp_len_ctx in enumerate(comp_len_per_ctx):
+                    if exceed_len == 0:
+                        break
+                    if comp_len_ctx > 0:
+                        update_comp_len_ctx = max(0, comp_len_ctx - exceed_len)
+                        exceed_len = max(0, exceed_len - comp_len_ctx)
+                        comp_len_per_ctx[rank] = update_comp_len_ctx
+            elif cur_comp_len < comp_len:
                 if rank == 0:
                     pass
                 else:
-                    cur_comp_len = cur_comp_len - cur_sent_len ## We don't want to include the last sentence
-                    total_comp_len -= cur_sent_len
-                    ## Increase the comp_len of lower ranked context
                     comp_len_per_ctx[rank-1] += comp_len - cur_comp_len
-            else:
-                r = r + 1
-        # print(comp_len_per_ctx)
+        # print(comp_len_per_ctx, len(argsort_sent), r, f"remain sentence: {len(sents) - r}")
 
         argsort_sent = argsort_sent[r:]
         if len(argsort_sent) == 0:
-            from IPython import embed; embed()
-            raise ValueError("No sentence is selected, at least one sentence should be selected.")
+            ## REMOVE CTX ITSELF.
+            ctx_removal_indices.append(i)
+            # from IPython import embed; embed()
+            # raise ValueError("No sentence is selected, at least one sentence should be selected.")
+        
         else:
             sent_indices_selected = np.sort(argsort_sent)
             sent_comp_text = ""
@@ -234,9 +272,20 @@ def compress_sentences(batch_scores, batch_token_ids, tokenizer, ctxs, ctx_indic
             ctxs[i]['text'] = sent_comp_text
 
             new_scores_ctx = np.concatenate([sent_scores_ctxs[i][sent_index] for sent_index in sent_indices_selected])
-            new_scores_ctxs.append(new_scores_ctx)
+            new_scores_ctxs[idx] = new_scores_ctx
+            # new_scores_ctxs.append(new_scores_ctx)
             new_token_ids_ctx = np.concatenate([sent_token_ids_ctxs[i][sent_index] for sent_index in sent_indices_selected])
-            new_token_ids_ctxs.append(new_token_ids_ctx)
+            new_token_ids_ctxs[idx] = new_token_ids_ctx
+            # new_token_ids_ctxs.append(new_token_ids_ctx)
+
+    if len(ctx_removal_indices) > 0:
+        ctxs = [ctx for i, ctx in enumerate(ctxs) if i not in ctx_removal_indices]
+
+    ## Reorder new_scores_ctxs and new_token_ids_ctxs
+    new_scores_ctxs = [new_scores_ctxs[ctx['org_idx']-1] for ctx in ctxs]
+    new_token_ids_ctxs = [new_token_ids_ctxs[ctx['org_idx']-1] for ctx in ctxs]
+    
+    
 
     # grad_comp_ratio_sent = np.linspace(sent_low, sent_high, len(ctxs ))[::-1]
     ## Using percentile
