@@ -29,7 +29,6 @@ _dict = {
     "repobench-p": "{compressed_prompt}{question}"
 }
 
-
 _dict_wo_instruction = {
     "narrativeqa": "{compressed_prompt}\n\nNow, answer the question based on the story asconcisely as you can, using a single phrase if possible. Do not provide any explanation.\n\nQuestion: {question}",
     "qasper": "{compressed_prompt}\n\n Answer the question based on the above article as concisely as you can, using a single phrase or sentence if possible. If the question cannot be answered based on the information in the article, write \"unanswerable\". If the question is a yes/no question, answer \"yes\", \"no\", or \"unanswerable\". Do not provide any explanation.\n\nQuestion: {question}",
@@ -49,7 +48,21 @@ _dict_wo_instruction = {
     "repobench-p": "{compressed_prompt}{question}"
 }
 
-def get_prompt(ctxs, qas, dataset, use_org_idx=True):
+def find_pattern_locations(batch_token_ids, patterns):
+    locations = []
+    for pattern in patterns:
+        indices = np.where(batch_token_ids == pattern[0])
+        len_pattern = len(pattern)
+        if len_pattern == 1:
+            locations.extend(indices[0])
+        elif indices[0].shape[0] > 0:
+            pattern_array = np.array(pattern)
+            for idx in indices[0]:
+                if np.array_equal(batch_token_ids[idx:idx + len_pattern], pattern_array):
+                    locations.extend(range(idx, idx + len_pattern))
+    return locations
+
+def get_prompt(ctxs, qas, dataset, use_org_idx=True, use_dict=True):
     if 'longbench' in dataset:
         dataname = '_'.join(dataset.split('_')[1:])
         
@@ -62,10 +75,16 @@ def get_prompt(ctxs, qas, dataset, use_org_idx=True):
                 else:
                     prompt = prompt + " " + ctx['text']
             else:
-                prompt = prompt + '\n' + ctx['text']
+                if prompt == "":
+                    prompt = ctx['text']
+                else:
+                    prompt = prompt + '\n' + ctx['text']
                 cur_ctx_id = ctx['id'].split('-')[0]
         # prompt = _dict[dataname].format(compressed_prompt=prompt, question=qas['question'])
-        prompt = _dict_wo_instruction[dataname].format(compressed_prompt=prompt, question=qas['question'])
+        if use_dict:
+            prompt = _dict_wo_instruction[dataname].format(compressed_prompt=prompt, question=qas['question'])
+        else:
+            prompt = prompt
         # prompt = prompt.strip('\n') + "\n\n" + qas['question']
         # prompt = "\n".join([ctx['text'] for ctx in ctxs] + [qas['question']])
     else:
@@ -107,8 +126,13 @@ def get_ctx_start_indices(tokenizer, question, titles, pattern_str):
         for question_title_input_id in question_title_input_ids:
             ctx_start_indices_list.append(len(question_title_input_id) + len_pattern)
     else:
+        question_tokens = tokenizer.tokenize(question)
+        max_question_length = 100
+        if len(question_tokens) > max_question_length:
+            question = tokenizer.convert_tokens_to_string(question_tokens[-max_question_length:])
         question = formats[1].format(question)
-        question_input_ids = tokenizer.encode(question, add_special_tokens=False)[-252:]
+
+        question_input_ids = tokenizer.encode(question, add_special_tokens=False)
             
         ctx_start_indices_list = [len(question_input_ids) + len_pattern for _ in range(len(titles))]
 
@@ -167,7 +191,7 @@ def compress_contexts(args, batch_scores, batch_token_ids, tokenizer, ctxs, ctx_
     ctx_scores = get_ctx_scores(batch_scores, ctx_score_mode, question_mode, include_end_token, tokenizer, question, titles, pattern_str)
     ctx_indices_sorted = np.argsort(ctx_scores)[::-1].tolist()
     ctx_indices = []
-    len_total = len(GPT_TOKENIZER.encode(get_prompt([], {'question': question}, args.dataset, use_org_idx=True)))
+    len_total = len(GPT_TOKENIZER.encode(get_prompt([], {'question': question}, args.dataset, use_org_idx=args.use_org_idx)))
 
     if ctx_score_cumsum is not None:
         ## By score percentile
@@ -184,12 +208,12 @@ def compress_contexts(args, batch_scores, batch_token_ids, tokenizer, ctxs, ctx_
         for idx in ctx_indices_sorted:
             if 'longbench' in args.dataset:
                 # Chunk only option
-                if not args.comp_sent and abs(len_total - ctx_comp_len) < abs(len_total + len(GPT_TOKENIZER.encode(f"{ctxs[idx]['text']}")) - ctx_comp_len):
+                if not args.comp_tok and not args.comp_sent and abs(len_total - ctx_comp_len) < abs(len_total + len(GPT_TOKENIZER.encode(f"{ctxs[idx]['text']}")) - ctx_comp_len):
                     break
                 len_total += len(GPT_TOKENIZER.encode(ctxs[idx]['text']))
             else:
                 # Chunk only option
-                if not args.comp_sent and abs(len_total - ctx_comp_len) < abs(len_total + len(GPT_TOKENIZER.encode(f"Document [{idx}](Title: {ctxs[idx]['title']}) {ctxs[idx]['text']}")) - ctx_comp_len):
+                if not args.comp_tok and not args.comp_sent and abs(len_total - ctx_comp_len) < abs(len_total + len(GPT_TOKENIZER.encode(f"Document [{idx}](Title: {ctxs[idx]['title']}) {ctxs[idx]['text']}")) - ctx_comp_len):
                     break
                 len_total += len(GPT_TOKENIZER.encode(f"Document [{idx}](Title: {ctxs[idx]['title']}) {ctxs[idx]['text']}"))
 
@@ -215,7 +239,7 @@ def compress_contexts(args, batch_scores, batch_token_ids, tokenizer, ctxs, ctx_
     return batch_scores_selected, batch_token_ids_selected, ctxs, ctx_indices
 
 
-def compress_sentences(batch_scores, batch_token_ids, tokenizer, ctxs, ctx_indices_sorted, sent_comp_len: int, adaptive_sent_comp: bool, question, pattern_str: str, pow, constraint_1_sent):
+def compress_sentences(args, batch_scores, batch_token_ids, tokenizer, ctxs, ctx_indices_sorted, sent_comp_len: int, adaptive_sent_comp: bool, question, pattern_str: str, pow, constraint_1_sent):
     ############################################
     ### Sentence compression using FiD score ###
     ############################################
@@ -271,6 +295,7 @@ def compress_sentences(batch_scores, batch_token_ids, tokenizer, ctxs, ctx_indic
         try:
             sent_len_list = [len(tokens_sent) for tokens_sent in tokenizer.batch_encode_plus(sents, add_special_tokens=False)['input_ids']]
         except:
+            print(22222222222222222222222)
             embed()
 
         cum_len_list = [sum(sent_len_list[:i+1]) for i in range(len(sent_len_list))]
@@ -281,7 +306,16 @@ def compress_sentences(batch_scores, batch_token_ids, tokenizer, ctxs, ctx_indic
         for cum_len in cum_len_list:
             if start_idx >= context_score.shape[0]:
                 continue
-            sent_mean_score_ctx.append(np.mean(context_score[start_idx:cum_len]))
+            if args.ctx_score_mode == 'mean':
+                sent_mean_score_ctx.append(np.mean(context_score[start_idx:cum_len]))
+            elif args.ctx_score_mode == 'max':
+                sent_mean_score_ctx.append(np.max(context_score[start_idx:cum_len]))
+            elif args.ctx_score_mode == 'sum':
+                sent_mean_score_ctx.append(np.sum(context_score[start_idx:cum_len]))
+            else:
+                raise ValueError(f"Invalid mode: {args.ctx_score_mode}")
+
+
             sent_scores_ctx.append(context_score[start_idx:cum_len])
             sent_token_idx_ctx.append(context_ids[start_idx:cum_len])
             ## Update     
@@ -292,8 +326,11 @@ def compress_sentences(batch_scores, batch_token_ids, tokenizer, ctxs, ctx_indic
         sent_token_ids_ctxs.append(sent_token_idx_ctx)
 
     num_ctxs = len(ctxs)
-
     if adaptive_sent_comp and num_ctxs > 1:
+        if ctxs[0].get('ctx_score') is None:
+            ctx_scores = get_ctx_scores(batch_scores, "mean", "include", False, tokenizer, question, titles, pattern_str)
+            for idx, ctx in enumerate(ctxs):
+                ctx['ctx_score'] = ctx_scores[idx]
         ctx_scores = [ctx['ctx_score'] for ctx in ctxs]
         ## Adaptive sentence compression
         ## sum should be the sent_comp_len
@@ -332,10 +369,10 @@ def compress_sentences(batch_scores, batch_token_ids, tokenizer, ctxs, ctx_indic
         sents = sents_list[i]
         
         if len(sent_mean_score_ctx) == 0:
-            print("No sentence in the context, tokenizer can not handle this case")
+            print("No sentence in the context, tokenizer cannot handle this case")
             ctx_removal_indices.append(i)
-            continue
             # embed()
+            continue
         rest_sents = None
         if len(sent_mean_score_ctx) != len(sents):
             ## When the length of the question + context was longer than the max length of the FiD, this can happen
@@ -348,7 +385,7 @@ def compress_sentences(batch_scores, batch_token_ids, tokenizer, ctxs, ctx_indic
         argsort_sent = np.argsort(sent_mean_score_ctx) ## Descending order
         cur_comp_len = 0
         # print(total_comp_len, sent_comp_len, comp_len, len(sents), comp_len_per_ctx, end=' / ')
-        embed()
+
         if total_comp_len >= sent_comp_len or comp_len == 0:
             # print(f'comp_len is 0, skip {rank}th context. out of {num_ctxs} contexts. / total_comp_len: {total_comp_len} / sent_comp_len: {sent_comp_len}')
             new_scores_ctxs[idx] = batch_scores_context[i]
@@ -362,10 +399,10 @@ def compress_sentences(batch_scores, batch_token_ids, tokenizer, ctxs, ctx_indic
                 if total_comp_len >= sent_comp_len:
                     ## Check if the last sentence is needed
                     # compare with previous total comp len, and if the difference is smaller, restore the last sentence
-                    if np.abs(total_comp_len - cur_sent_len - sent_comp_len) < np.abs(total_comp_len - sent_comp_len):
-                        r = r - 1
-                        total_comp_len -= cur_sent_len
-                        cur_comp_len -= cur_sent_len
+                    # if np.abs(total_comp_len - cur_sent_len - sent_comp_len) < np.abs(total_comp_len - sent_comp_len):
+                    #     r = r - 1
+                    #     total_comp_len -= cur_sent_len
+                    #     cur_comp_len -= cur_sent_len
                     break
                 elif cur_comp_len >= comp_len:
                     break
@@ -421,15 +458,13 @@ def compress_sentences(batch_scores, batch_token_ids, tokenizer, ctxs, ctx_indic
                     pass
                 else:
                     comp_len_per_ctx[rank-1] += comp_len - cur_comp_len
-
     if len(ctx_removal_indices) > 0:
         ctxs = [ctx for i, ctx in enumerate(ctxs) if i not in set(ctx_removal_indices)]
 
     ## Reorder new_scores_ctxs and new_token_ids_ctxs
     new_scores_ctxs = [new_scores_ctxs[ctx['org_idx']-1] for ctx in ctxs]
     new_token_ids_ctxs = [new_token_ids_ctxs[ctx['org_idx']-1] for ctx in ctxs]
-    
-    
+
 
     # grad_comp_ratio_sent = np.linspace(sent_low, sent_high, len(ctxs ))[::-1]
     ## Using percentile
@@ -458,144 +493,152 @@ def compress_sentences(batch_scores, batch_token_ids, tokenizer, ctxs, ctx_indic
     return new_scores_ctxs, new_token_ids_ctxs, ctxs
 
 
-def compress_tokens(batch_scores, batch_token_ids, ctxs, token_lamb, tokenizer):
+def compress_tokens(args, batch_scores, batch_token_ids, ctxs, tok_lamb, adaptive_token_comp, tokenizer, question, force_tokens=None, true_target=None):
     ############################################
     ### 3. Token compression using FiD score ###
     ############################################
+    # ture_target: target_len - len_wo_ctxs
+    ## 어디에 줄 바꿈이 있는지만 확인하면 됨.
+    cur_num_ctxs = len(batch_scores)
     len_ctxs = [ctx_scores.shape[0] for ctx_scores in batch_scores]
+
+    line_end_indices_ctxs = []
+    line_leading_trailing_spaces_ctxs = []
+    sents_ctxs = []
+
+    # for ctx in ctxs:
+    #     if ctx['ctx_score'] == 0.01061269998402443:
+    #         print('########################')
+    #         embed()
+
+    for ctx_i, ctx in enumerate(ctxs):
+        line_end_indices = [] ## len(line_end_indices) == #lines
+        line_leading_trailing_spaces = []
+        cur = 0
+        sents = ctx['text'].split('\n')
+        sents_ctxs.append(sents)
+        for lin in sents:
+            cur += len(tokenizer.encode(lin, add_special_tokens=False))
+            line_end_indices.append(cur)
+            match_leading = re.match(r'^\s*', lin)
+            leading_spaces = match_leading.group(0) if match_leading else ''
+            
+            # match_trailing = re.search(r'\s*$', lin)
+            # trailing_spaces = match_trailing.group(0) if match_trailing else ''
+            trailing_spaces = ''
+            line_leading_trailing_spaces.append((leading_spaces, trailing_spaces))
+
+        line_end_indices_ctxs.append(line_end_indices)
+        line_leading_trailing_spaces_ctxs.append(line_leading_trailing_spaces)
 
     ## Concatenate all the scores and ids in the batch
     batch_scores = np.concatenate(batch_scores)
     batch_token_ids = np.concatenate(batch_token_ids)
 
-    # target_len = max(int(batch_scores.shape[0] * token_lamb), 100) ## Not cur_len, as it is the length based on chatgpt_tok
-    target_len = int(batch_scores.shape[0] * token_lamb)
 
-    cum_len_list = [sum(len_ctxs[:i+1]) for i in range(len(len_ctxs))]
-    sorted_target_indices = np.sort(batch_scores.argsort()[::-1][:target_len])
+    target_len = int(batch_scores.shape[0] * tok_lamb)
+    # print(batch_scores.shape[0], target_len, tok_comp_len)
+    cum_len_list = []
+    for i in range(len(len_ctxs)):
+        cum_len_list.append(sum(len_ctxs[:i+1]))
 
-    start = 0
-    for cum_len, ctx in zip(cum_len_list, ctxs):
-        end = cum_len
-        cur_target_indices = sorted_target_indices[(sorted_target_indices >= start) & (sorted_target_indices < end)]
-        empty_token_indices = np.where(batch_token_ids[start:end] == 3)[0] + start
-        cur_target_indices = np.sort(np.union1d(cur_target_indices, empty_token_indices))
-        new_batch_token_ids = batch_token_ids[cur_target_indices]
-        new_batch_token_ids_filtered = new_batch_token_ids[new_batch_token_ids != 2]
-        tok_comp_text = tokenizer.decode(new_batch_token_ids_filtered)
-        tok_comp_text = re.sub(r' {2,}', ' ', tok_comp_text)
-        ctx['text'] = tok_comp_text
-        start = end
+    if force_tokens is not None:
+        force_tokens_token_ids = tokenizer.batch_encode_plus(force_tokens, add_special_tokens=False)['input_ids']
+        force_token_indices = find_pattern_locations(batch_token_ids, force_tokens_token_ids)
+        batch_scores[force_token_indices] += 1e10
 
-    ## [ES] Should I return batch_token_scores, batch_token_ids too?
+    batch_scores_argsort = batch_scores.argsort()[::-1]
+    # filtered_indices = [idx for idx in batch_scores_argsort if batch_token_ids[idx] != 3]
+    # target_indices = filtered_indices[:target_len]
+    # num_ignore = np.where(batch_token_ids[batch_scores_argsort[:target_len]] == 3)[0].shape[0]
+    # num_ignore = 0 
+    target_indices = batch_scores_argsort[:target_len]
+    sorted_target_indices = np.sort(target_indices)
+    
+    space_total = ''
+    for spaces_ctx in line_leading_trailing_spaces_ctxs:
+        for spaces in spaces_ctx:
+            space_total += '\n' + ' '.join(spaces)
+
+    all_text = get_prompt(ctxs, {'question': ""}, args.dataset, use_org_idx=args.use_org_idx, use_dict=False)
+    all_text_tokens = tokenizer.tokenize(all_text)
+    all_text_tokens.extend(['pad'] * (batch_token_ids.shape[0] - len(all_text_tokens)))
+    all_text_tokens = np.array(all_text_tokens)
+    comp_len_estimate = len(GPT_TOKENIZER.encode(tokenizer.convert_tokens_to_string(all_text_tokens[sorted_target_indices]))) + int(len(GPT_TOKENIZER.encode(space_total)))
+
+    # comp_len_estimate = len(GPT_TOKENIZER.encode(tokenizer.decode(batch_token_ids[sorted_target_indices]))) + int(len(GPT_TOKENIZER.encode(space_total)) * tok_lamb)
+    # comp_len_estimate = len(GPT_TOKENIZER.encode(tokenizer.decode(batch_token_ids[sorted_target_indices]))) + int(len(GPT_TOKENIZER.encode(space_total)))
+
+    margin = true_target - comp_len_estimate ## true_target: number of tokens should be elimiated
+    target_indices = batch_scores_argsort[:target_len + margin]
+    sorted_target_indices = np.sort(target_indices)
+    # target_indices = batch_scores_argsort[:target_len]
+    # union_len = np.where(batch_token_ids[target_indices] == 3)[0].shape[0]
+    # sorted_target_indices = np.sort(batch_scores_argsort[:target_len - union_len])
+
+    remove_ctx_indices = []
+    ctx_start = 0
+    for ctx_i, (cum_len, ctx) in enumerate(zip(cum_len_list, ctxs)):
+        ctx_end = cum_len
+        ctx_by_line = []
+        sent_start = 0
+        for sent_i, sent_cum_len in enumerate(line_end_indices_ctxs[ctx_i]):
+            sent_end = sent_cum_len
+            if sent_end == sent_start:
+                ctx_by_line.append(line_leading_trailing_spaces_ctxs[ctx_i][sent_i][0])
+                continue
+
+            cur_target_indices_sent = sorted_target_indices[(sorted_target_indices >= sent_start + ctx_start) & (sorted_target_indices < sent_end + ctx_start)]
+            empty_token_indices_sent = np.where(batch_token_ids[sent_start + ctx_start:sent_end + ctx_start] == 3)[0] + sent_start + ctx_start
+            cur_target_indices_sent = np.sort(np.union1d(cur_target_indices_sent, empty_token_indices_sent))
+            # cur_target_indices_sent = np.sort(cur_target_indices_sent)
+
+
+            batch_tokens_sent = tokenizer.convert_ids_to_tokens(batch_token_ids[sent_start + ctx_start:sent_end + ctx_start])
+
+            if '<unk>' in set(batch_tokens_sent):
+                unk_indices = np.where(tokenizer.encode(sents_ctxs[ctx_i][sent_i], return_tensors='np', add_special_tokens=False) == 2)[1]
+
+                sent_tokens = tokenizer.tokenize(sents_ctxs[ctx_i][sent_i])
+                if len(sent_tokens) != len(batch_tokens_sent):
+                    batch_tokens_sent = ['_'] + batch_tokens_sent
+                for idx in unk_indices:
+                    try:
+                        batch_tokens_sent[idx] = sent_tokens[idx]
+                    except:
+                        if idx == len(sent_tokens) - 1:
+                            batch_tokens_sent[-1] = sent_tokens[idx]
+
+            new_batch_tokens_sent = np.array(batch_tokens_sent)[cur_target_indices_sent - sent_start - ctx_start].tolist()
+            tok_comp_sent = tokenizer.convert_tokens_to_string(new_batch_tokens_sent)
+
+            # new_batch_token_ids_filtered = new_batch_token_ids_sent[new_batch_token_ids_sent != 2] ## Remove <unk> tokens
+            # tok_comp_sent = tokenizer.decode(new_batch_token_ids_filtered)
+            tok_comp_sent = re.sub(r' {2,}', ' ', tok_comp_sent) ## Remove multiple white spaces caused by token selection
+            tok_comp_sent = line_leading_trailing_spaces_ctxs[ctx_i][sent_i][0] + tok_comp_sent + line_leading_trailing_spaces_ctxs[ctx_i][sent_i][1]
+            
+            # embed()
+
+            sent_start = sent_end
+            if tok_comp_sent == "":
+                continue    
+            #     embed()
+            ctx_by_line.append(tok_comp_sent)
+            
+        ctx_start = ctx_end
+        new_text = '\n'.join(ctx_by_line)
+        if new_text.strip() == "":
+            remove_ctx_indices.append(ctx_i)
+        else:
+            ctx['text'] = new_text
+
+        # empty_token_indices = np.where(batch_token_ids[start:end] == 3)[0] + start
+        # cur_target_indices = np.sort(np.union1d(cur_target_indices, empty_token_indices))
+        # new_batch_token_ids = batch_token_ids[cur_target_indices]
+        # new_batch_token_ids_filtered = new_batch_token_ids[new_batch_token_ids != 2]
+        # tok_comp_text = tokenizer.decode(new_batch_token_ids_filtered) ## decode는 해야하지만, 
+        # tok_comp_text = re.sub(r' {2,}', ' ', tok_comp_text)
+    ctxs = [ctx for ctx_i, ctx in enumerate(ctxs) if ctx_i not in remove_ctx_indices]
+
+    ## [ES] Should I return batch_token_scores, batch_token_ids too? no
     return ctxs
-
-
-
-'''
-
-span_em_list = []
-for pred in preds:
-    cnt = pred['model_prompt'].count('Document [')
-    gold_answers = pred["answers"]
-    model_answer = pred["model_answer"]
-    span_em_list.append(best_subspan_em(prediction=model_answer, ground_truths=gold_answers))
-print(f'{100 * np.mean(span_em_list):.2f}')
-
-
-
-
-3.86
-66.71
-4.46
-67.07
-6.96
-66.81
-7.29
-66.55
-
-3.88
-51.76
-4.47
-51.50
-6.96
-51.15
-7.27
-50.32
-
-0.05 (문서 압축을 많이한 것)
-total: 58.89 low_indices: 66.71 / high_indices: 51.76
-
-0.1
-total: 58.92 low_indices: 67.07 / high_indices: 51.50
-
-0.15
-total: 58.65 low_indices: 66.64 / high_indices: 51.36
-
-0.2
-total: 58.84 low_indices: 66.98 / high_indices: 51.43
-
-0.25
-
-0.3
-total: 58.62 low_indices: 66.81 / high_indices: 51.15
-
-0.35 (문서 압축을 조금한 것)
-total: 58.06 low_indices: 66.55 / high_indices: 50.32
-
-
-
-3.87
-58.89
-51.76
-66.71
-4.47
-58.92
-51.50
-67.07
-5.06
-58.65
-51.36
-66.64
-5.90
-58.84
-51.43
-66.98
-
-
-
-
-
-for rate in [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4]
-for rate in [0.05, 0.3]:
-for rate in [0.05, 0.1, 0.15, 0.2]:
-    with xopen(f'fid_500_ctxTrue_sentTrue{rate}_tokFalse1.0_orgidxTrue_Llama-2-13b-chat-hf.jsonl.gz') as f:
-        preds = [json.loads(l) for l in f]
-        doc_num_list = []
-        span_em_list = []
-        span_em_list_low = []
-        span_em_list_high = []
-
-        for p_i, pred in enumerate(preds):
-            cnt = pred['model_prompt'].count('Document [')
-            doc_num_list.append(cnt)
-            gold_answers = pred["answers"]
-            model_answer = pred["model_answer"]
-            span_em = best_subspan_em(prediction=model_answer, ground_truths=gold_answers)
-            span_em_list.append(span_em)
-            if p_i in low_indices:
-                span_em_list_low.append(span_em)
-            else:
-                span_em_list_high.append(span_em)
-        print(f'{np.mean(doc_num_list):.2f}')
-        print(f'{100 * np.mean(span_em_list):.2f}')
-        print(f'{100 * np.mean(span_em_list_low):.2f}')
-        print(f'{100 * np.mean(span_em_list_high):.2f}')
-        
-doc_num_list = []
-for d in data:
-    cnt = d['compressed_prompt'].count('Document [')
-    doc_num_list.append(cnt)
-print(f'{np.mean(doc_num_list):.2f}')
-
-'''
