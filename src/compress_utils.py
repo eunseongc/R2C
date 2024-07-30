@@ -248,7 +248,16 @@ def compress_sentences(args, batch_scores, batch_token_ids, tokenizer, ctxs, ctx
     ## Decode 해서 더해줄 것이 아니라, 점수로... 어떻게 해야할듯..?
     ## [ES] batch_len_context is not used
     titles = [ctx['title'] for ctx in ctxs]
+
+    ################
+    ## Temporal (USE IT FOR NQ ONLY)
+    # ctx_start_indices = []
+    # for batch_token_id in batch_token_ids:
+    #     ctx_start_indices.append(np.where(batch_token_id == 2625)[0][0] + 2)
+    ## original
     ctx_start_indices = get_ctx_start_indices(tokenizer, question, titles, pattern_str)
+    #################
+
     batch_eos_token_idx, batch_len_context = [], []
     for ctx_i, token_ids in enumerate(batch_token_ids):
         eos_token_idx = np.where(token_ids == 1)[0][-1]
