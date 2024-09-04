@@ -12,7 +12,7 @@ from time import time
 from xopen import xopen
 from copy import deepcopy
 from tqdm import tqdm
-from src.compress_utils import *
+from src_comp.compress_utils import *
 from transformers import T5TokenizerFast
 from IPython import embed
 

@@ -75,7 +75,7 @@ def split_line(line, tokenizer, max_length, args):
             # Check if adding the word exceeds the max length
             if len(current_part) == target_length:
                 if current_part:
-                    cur_text = tokenizer.decode(current_part)
+                    cur_text = tokenizer.decode(current_part).lstrip()
                     parts.append(cur_text)
                     current_part = []
                 else:
@@ -87,7 +87,7 @@ def split_line(line, tokenizer, max_length, args):
             current_part.append(token)
 
         if current_part:
-            cur_text = tokenizer.decode(current_part)
+            cur_text = tokenizer.decode(current_part).lstrip()
             if cur_text.strip() == '':
                 pass
             else:
@@ -210,6 +210,7 @@ def process_context(qas, tokenizer, max_textlength, args, title=None, has_answer
 
 def main(args):
     max_textlength = args.max_textlength
+    split = args.split
 
     if args.tokenizer == 't5':
         tokenizer = T5TokenizerFast.from_pretrained('t5-base')
@@ -254,10 +255,11 @@ def main(args):
     total_time = 0
     for dataname in datasets:
         if dataname == 'abisee/cnn_dailymail':
-            data = load_dataset(dataname, '3.0.0', split='test')
-            # data = data.select(range(1000))
+            data = load_dataset(dataname, '3.0.0', split=split)
+            if split in ['validation', 'test']:
+                data = data.select(range(3000))
         else:
-            data = load_dataset('THUDM/LongBench', dataname, split='test')
+            data = load_dataset('THUDM/LongBench', dataname, split=split)
         new_qas = []
         t = time()
         for d_i, d in enumerate(tqdm(data, desc=dataname)):

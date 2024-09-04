@@ -1,5 +1,5 @@
 # Files
-*.sh
+# *.sh
 
 
 # Folders
@@ -7,3 +7,4 @@ token_scores/
 data_compressed/
 predictions_compressed/
 qa_data/
+R2C_fig1_motivation/
