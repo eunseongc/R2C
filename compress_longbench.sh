@@ -19,7 +19,8 @@ sent_comp_ratio=0.2
 power=1
 # e_toks="200" ## cst
 
-datanames="hotpotqa 2wikimqa musique triviaqa trec samsum lcc repobench-p"
+# datanames="hotpotqa 2wikimqa musique triviaqa trec samsum lcc repobench-p"
+datanames="narrativeqa qasper multifieldqa_en hotpotqa 2wikimqa musique gov_report qmsum multi_news triviaqa trec samsum lcc repobench-p"
 for dataname in ${datanames}
 do
     dataset=longbench_${dataname}
@@ -40,8 +41,7 @@ do
                         --comp_sent \
                         --sent_comp_ratio ${sent_comp_ratio} \
                         --adaptive_sent_comp \
-                        --pow ${power}
-
+                        --pow ${power} &
 done
 
 

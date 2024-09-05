@@ -23,8 +23,10 @@ output_version=$4
 # elif dataname in ["lcc", "repobench-p"]:
 #     task="code"
 # narrativeqa qasper multifieldqa_en hotpotqa 2wikimqa musique gov_report qmsum multi_news triviaqa trec samsum lcc repobench-p
-# datanames="hotpotqa 2wikimqa musique triviaqa"
-datanames="trec samsum lcc repobench-p"
+
+
+# datanames="narrativeqa qasper multifieldqa_en hotpotqa 2wikimqa musique gov_report"
+datanames="qmsum multi_news triviaqa trec samsum lcc repobench-p"
 
 echo "datanames: ${datanames}"
 for dataname in $datanames
