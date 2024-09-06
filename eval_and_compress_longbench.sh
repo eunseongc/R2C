@@ -5,8 +5,8 @@ output_version=$4
 ## target_length is 2000, unless specified
 target_length=${5:-2000}
 
-datanames="narrativeqa qasper multifieldqa_en hotpotqa 2wikimqa musique gov_report"
-# datanames="qmsum multi_news triviaqa trec samsum lcc repobench-p"
+# datanames="narrativeqa qasper multifieldqa_en hotpotqa 2wikimqa musique gov_report"
+datanames="qmsum multi_news triviaqa trec samsum lcc repobench-p"
 
 echo "datanames: ${datanames}"
 for dataname in $datanames
@@ -30,14 +30,13 @@ do
     dataset=longbench_${dataname}
 
     # token_scores_file="${token_score_version}/${model_size}_token_scores_list_${dataset}.pkl" ## R2C paper report one
-    token_scores_file="${output_version}/token_scores_list_${dataset}.pkl"
 
     ### chunk O sentence O tok X
     python compress.py --dataset ${dataset} \
                        --input_path data/${input_version}/${dataset}_test.json \
                        --output_root data_compressed/${model_size}/${output_version} \
                        --use_token_scores \
-                       --token_scores_path token_scores/${output_version} \
+                       --token_scores_path token_scores/${output_version}/token_scores_list_${dataset}.pkl \
                        --target_length ${target_length} \
                        --question_mode include \
                        --comp_ctx \
