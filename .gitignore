@@ -3,6 +3,7 @@
 
 
 # Folders
+checkpoints_fid/
 token_scores/
 data_compressed/
 predictions_compressed/
