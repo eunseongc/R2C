@@ -18,7 +18,7 @@ CUDA_VISIBLE_DEVICES=${gpu} python eval_fid.py --model_path ${path} \
 
 
 dataset="nq_dpr_${split}"
-token_score_path="${output_version}/token_scores_list_${dataset}_20.pkl"
+token_scores_path="${output_version}/token_scores_list_${dataset}_20.pkl"
 
 sent_comp_ratio_list="0.2"
 pow_list="1"
@@ -31,7 +31,7 @@ do
                            --input_path data/nq/${split}.json \
                            --output_root data_compressed/${output_version} \
                            --use_token_scores \
-                           --token_scores_path token_scores/${token_scores_file} \
+                           --token_scores_path token_scores/${token_scores_path} \
                            --target_length ${target_length} \
                            --use_org_idx \
                            --question_mode include \
