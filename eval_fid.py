@@ -163,12 +163,19 @@ def evaluate(model, dataset, dataloader, tokenizer, opt):
         opt.model_path = 'flan-t5-base'
     elif 'flan-t5-large' in opt.model_path:
         opt.model_path = 'flan-t5-large'
-
-    if version is None: ## For NQ dataset
-        token_score_path = f'token_scores/token_scores_list_{dataset_name}_dpr_{split}_{opt.n_contexts}_{opt.model_path}.pkl'
     else:
-        if opt.output_version is not None:
-            version = opt.output_version
+        opt.model_path = opt.model_path.split('/')[1] ## [0]: checkpoints_fid, [1]: model_name
+
+
+    if opt.output_version is not None:
+        version = opt.output_version
+
+    if dataset_name == 'nq':
+        if version is not None:
+            token_score_path = f'token_scores/{version}/token_scores_list_{dataset_name}_dpr_{split}_{opt.n_contexts}.pkl'
+        else:
+            token_score_path = f'token_scores/token_scores_list_{dataset_name}_dpr_{split}_{opt.n_contexts}_{opt.model_path}.pkl'
+    else:
         token_score_path = f'token_scores/{version}/token_scores_list_{dataset_name}.pkl'
 
     if not os.path.exists(os.path.dirname(token_score_path)):
