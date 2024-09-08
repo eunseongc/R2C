@@ -6,7 +6,8 @@ output_version=$4
 target_length=${5:-2000}
 
 # datanames="narrativeqa qasper multifieldqa_en hotpotqa 2wikimqa musique gov_report"
-datanames="qmsum multi_news triviaqa trec samsum lcc repobench-p"
+# datanames="qmsum multi_news triviaqa trec samsum lcc repobench-p"
+datanames="qmsum multi_news"
 
 echo "datanames: ${datanames}"
 for dataname in $datanames
