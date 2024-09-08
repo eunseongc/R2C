@@ -1,3 +1,8 @@
+
+
+data_dir="data_compressed"
+pred_dir="pred_compressed"
+
 model_name="Llama-2-7b-chat-hf"
 if [ "${model_name}" == "llama-30b-instruct" ]; then
     dist="upstage"
@@ -12,8 +17,9 @@ else
     return 1
 fi
 
-input_path="data_compressed/nq_cnn_v2_0904w_0_step320000/nq_dpr_dev_20/fid_500_ctxTrue_sortTrue_sentTrue0.2_1_tokFalse0.jsonl.gz"
-output_path="pred_compressed/nq_cnn_v2_0904w_0_step320000/nq_dpr_dev_20/fid_500_ctxTrue_sortTrue_sentTrue0.2_1_tokFalse0_${model_name}.jsonl.gz"
+input_path="${data_dir}/nq_cnn_v2_0904w_0_step320000/nq_dpr_dev_20/fid_500_ctxTrue_sortTrue_sentTrue0.2_1_tokFalse0.jsonl.gz"
+output_path="${pred_dir}/{input_path}_${model_name}"
+
 echo ">>>>>>>>>>>>>>>>>> Start predict: ${output_path}"
 python -u ./scripts/get_qa_responses_from_llama_2.py \
     --input-path ${input_path} \
