@@ -47,22 +47,19 @@ class Dataset(torch.utils.data.Dataset):
     def __getitem__(self, index):
         example = self.data[index]
         
-        # ex_question = "summarize the given text"
-        # ex_question = "" ## ??
-        # print(ex_question)
-
         ex_question = example['question']
         if ex_question == '':
-        #     # ex_question = "what is the main theme"
-        #     # ex_question = "what is the title of the text"
-        #     # ex_question = "what is it about" #################### 현재 1등
-        #     # ex_question = "What is the main idea?"
-        #     ex_question = self.opt.pseudo_question
             ex_question = "Now, write a one-page summary of the report."
-            
-        #     # ex_question = "what is the purpose of this part"
+        #     ex_question = "what is the main theme"
+        #     ex_question = "what is the title of the text"
+        #     ex_question = "what is it about" #################### 현재 1등
+        #     ex_question = "What is the main idea?"
+        #     ex_question = self.opt.pseudo_question
+        #     ex_question = "Can you provide a brief summary of this text?"
+        #     ex_question = "what is the purpose of this part"
         #     print(f">> Empty question: {example['id']} >> replace with {ex_question}")
         # print(ex_question)
+
         ex_question_tokens = self.t5_tok.tokenize(ex_question)
         # print(len(ex_question_tokens))
         if len(ex_question_tokens) > 100:
