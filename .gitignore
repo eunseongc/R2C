@@ -1,4 +1,5 @@
 # Files
+*.ipynb
 *.sh
 
 
