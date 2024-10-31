@@ -5,7 +5,8 @@
 # Folders
 checkpoints_fid/
 token_scores/
+pred_compressed/
 data_compressed/
 predictions_compressed/
-qa_data/
+data/
 R2C_fig1_motivation/

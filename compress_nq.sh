@@ -5,12 +5,14 @@
 # source run_nq.sh test3610 500 500_flan-t5-large token_scores_list_nq_dpr_test3610_20_flan-t5-large.pkl &
 # source run_nq.sh test3610 500 500_t0-base token_scores_list_nq_dpr_test3610_20_t0-base.pkl &
 # source run_nq.sh test3610 500 500_t0-large token_scores_list_nq_dpr_test3610_20_t0-large.pkl
+# source compress_nq.sh llama3_need_ctx_testoracle 50 icae token_scores_list_llama3_need_ctx_testoracle_byICAE.pkl  
 
 split=$1
 target_length=$2
 output_version=$3
 token_scores_file=$4
-dataset="nq_dpr_${split}"
+# dataset="nq_dpr_${split}"
+dataset="${split}"
 
 # model_size=$2
 # token_scores_file="${model_size}_token_scores_list_${dataset}_20_t5-base_empty.pkl"
@@ -125,16 +127,13 @@ do
         for pow in ${pow_list}
         do
             python compress.py --dataset ${dataset} \
-                            --input_path ../eun_FiD/open_domain_data/nq/${split}.json \
+                            --input_path data/nq/${split}.json \
                             --output_root data_compressed/${output_version} \
                             --use_token_scores \
                             --token_scores_path token_scores/${token_scores_file} \
                             --target_length ${target_length} \
                             --use_org_idx \
                             --question_mode include \
-                            --comp_ctx \
-                            --ctx_score_mode mean \
-                            --do_sort_ctx \
                             --comp_sent \
                             --sent_comp_ratio ${sent_comp_ratio} \
                             --adaptive_sent_comp \
@@ -146,7 +145,9 @@ do
 done
 
 
-
+                            # --comp_ctx \
+                            # --ctx_score_mode mean \
+                            # --do_sort_ctx \
 
 ####################### OLD
 

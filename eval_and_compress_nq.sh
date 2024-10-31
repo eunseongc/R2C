@@ -6,19 +6,22 @@ output_version=$4
 target_length=${5:-500}
 
 
-CUDA_VISIBLE_DEVICES=${gpu} python eval_fid.py --model_path ${path} \
-                                               --eval_data data/nq/${split}.json \
-                                               --per_gpu_batch_size 1 \
-                                               --write_crossattention_scores \
-                                               --write_results \
-                                               --text_maxlength 512 \
-                                               --n_contexts 20 \
-                                               --output_version ${output_version} \
-                                               --local-rank -1
+# CUDA_VISIBLE_DEVICES=${gpu} python eval_fid.py --model_path ${path} \
+#                                                --eval_data data/nq/${split}.json \
+#                                                --per_gpu_batch_size 1 \
+#                                                --write_crossattention_scores \
+#                                                --write_results \
+#                                                --text_maxlength 512 \
+#                                                --n_contexts 20 \
+#                                                --output_version ${output_version} \
+#                                                --local-rank -1
 
 
-dataset="nq_dpr_${split}"
-token_scores_path="${output_version}/token_scores_list_${dataset}_20.pkl"
+# dataset="nq_dpr_${split}"
+# token_scores_path="${output_version}/token_scores_list_${dataset}_20.pkl"
+
+dataset="${split}"
+token_scores_path="${output_version}/token_scores_list_${dataset}.pkl"
 
 sent_comp_ratio_list="0.2"
 pow_list="1"

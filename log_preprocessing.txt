@@ -1,0 +1,5 @@
+abisee/cnn_dailymail: 594.230s (total: 594.230s)
+abisee/cnn_dailymail: 7.595s (total: 7.595s)
+abisee/cnn_dailymail: 7.638s (total: 7.638s)
+abisee/cnn_dailymail: 4.443s (total: 4.443s)
+abisee/cnn_dailymail: 4.587s (total: 4.587s)

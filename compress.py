@@ -13,7 +13,7 @@ from xopen import xopen
 from copy import deepcopy
 from tqdm import tqdm
 from src_comp.compress_utils import *
-from transformers import T5TokenizerFast
+from transformers import T5TokenizerFast, AutoTokenizer
 from IPython import embed
 
 
@@ -22,7 +22,8 @@ def calculate_entropy(probabilities):
 
 def main(args, logger):
     chatgpt_tok = tiktoken.encoding_for_model("gpt-3.5-turbo")
-    t5_tok = T5TokenizerFast.from_pretrained('t5-base')
+    # scorer_tokenizer = T5TokenizerFast.from_pretrained('t5-base')
+    scorer_tokenizer = AutoTokenizer.from_pretrained('mistralai/Mistral-7B-Instruct-v0.2', use_fast=False)
 
     #################################### Loading input dataset
     if args.input_path.endswith('.jsonl'):
@@ -160,7 +161,7 @@ def main(args, logger):
                     pass
                 else:
                     titles = [ctx['title'] for ctx in ctxs]
-                    ctx_start_indices = get_ctx_start_indices(t5_tok, question, titles, pattern_str)
+                    ctx_start_indices = get_ctx_start_indices(scorer_tokenizer, question, titles, pattern_str)
                     batch_eos_token_idx, batch_len_context = [], []
                     for ctx_i, token_ids in enumerate(batch_token_ids):
                         eos_token_idx = np.where(token_ids == 1)[0][-1]
@@ -176,7 +177,7 @@ def main(args, logger):
                                            ctxs,
                                            tok_lamb,
                                            args.adaptive_tok_comp,
-                                           t5_tok,
+                                           scorer_tokenizer,
                                            question,
                                            force_tokens,
                                            true_target=args.target_length-len_wo_ctxs)
@@ -199,7 +200,7 @@ def main(args, logger):
             # 0.3 (0.2, 0.15), 0.6065 # mean: 0.2827376598950415
             # if args.use_gini:
             #     titles = [ctx['title'] for ctx in ctxs]
-            #     ctx_scores = get_ctx_scores(batch_scores, args.ctx_score_mode, args.question_mode, args.include_end_token, t5_tok, question, titles, pattern_str)
+            #     ctx_scores = get_ctx_scores(batch_scores, args.ctx_score_mode, args.question_mode, args.include_end_token, scorer_tokenizer, question, titles, pattern_str)
             #     ## NORM 필요?
             #     ctx_gini = gini(ctx_scores)
             #     if ctx_gini >= args.ctx_gini_standard : ## High inequality --> high compression ratio for contexts
@@ -218,7 +219,7 @@ def main(args, logger):
                 batch_scores, batch_token_ids, ctxs, ctx_indices_sorted = compress_contexts(args,
                                                                                             batch_scores,
                                                                                             batch_token_ids,
-                                                                                            t5_tok,
+                                                                                            scorer_tokenizer,
                                                                                             ctxs,
                                                                                             ctx_target_len,
                                                                                             args.ctx_score_cumsum,
@@ -230,7 +231,7 @@ def main(args, logger):
 
             elif args.do_sort_ctx:
                 titles = [ctx['title'] for ctx in ctxs]
-                ctx_scores = get_ctx_scores(batch_scores, args.ctx_score_mode, args.question_mode, args.include_end_token, t5_tok, question, titles, pattern_str)
+                ctx_scores = get_ctx_scores(batch_scores, args.ctx_score_mode, args.question_mode, args.include_end_token, scorer_tokenizer, question, titles, pattern_str)
                 ctx_indices_sorted = np.argsort(ctx_scores)[::-1].tolist()
                 ctxs = [ctxs[i] for i in ctx_indices_sorted]
                 batch_scores = [batch_scores[i] for i in ctx_indices_sorted]
@@ -242,7 +243,7 @@ def main(args, logger):
                     batch_scores, batch_token_ids, ctxs = compress_sentences(args,
                                                                              batch_scores,
                                                                              batch_token_ids,
-                                                                             t5_tok,
+                                                                             scorer_tokenizer,
                                                                              ctxs,
                                                                              ctx_indices_sorted,
                                                                              sent_comp_len,
@@ -280,7 +281,7 @@ def main(args, logger):
                 else:
                     if not args.comp_sent:
                         titles = [ctx['title'] for ctx in ctxs]
-                        ctx_start_indices = get_ctx_start_indices(t5_tok, question, titles, pattern_str)
+                        ctx_start_indices = get_ctx_start_indices(scorer_tokenizer, question, titles, pattern_str)
                         batch_eos_token_idx, batch_len_context = [], []
                         for ctx_i, token_ids in enumerate(batch_token_ids):
                             eos_token_idx = np.where(token_ids == 1)[0][-1]
@@ -296,7 +297,7 @@ def main(args, logger):
                                            ctxs,
                                            tok_lamb,
                                            args.adaptive_tok_comp,
-                                           t5_tok,
+                                           scorer_tokenizer,
                                            question,
                                            force_tokens,
                                            true_target=args.target_length-len_wo_ctxs)
@@ -376,11 +377,8 @@ if __name__ == "__main__":
     parser.add_argument('--raw_for_low_gini', type=float, default=0.2, required=False)
     parser.add_argument('--raw_for_high_gini', type=float, default=0.15, required=False)
     parser.add_argument('--pow', type=int, default=2) ## e.g., dpr_20, 20_gold_at_0
-    # parser.add_argument('--ctx_score_cumsum_gini_low', type=float, default=0.3, required=False)
-    # parser.add_argument('--ctx_score_cumsum_gini_high', type=float, default=0.4, required=False)
-    # parser.add_argument('--sent_low_gini_low', type=float, default=0.3, required=False)
-    # parser.add_argument('--sent_low_gini_high', type=float, default=0.8, required=False)
-    
+
+
     parser.add_argument('--target_length', type=int, default=False,
                         help="Number of target tokens for the compressed prompt")
 

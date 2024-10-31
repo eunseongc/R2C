@@ -124,7 +124,9 @@ def get_ctx_start_indices(tokenizer, question, titles, pattern_str):
         question_title_input_ids = tokenizer.batch_encode_plus(question_title, add_special_tokens=False)['input_ids']
         ctx_start_indices_list = []
         for question_title_input_id in question_title_input_ids:
-            ctx_start_indices_list.append(len(question_title_input_id) + len_pattern)
+            # ctx_start_indices_list.append(len(question_title_input_id) + len_pattern)
+            ctx_start_indices_list.append(1 + len(question_title_input_id) + len_pattern) ## For LLAMA
+
     else:
         question_tokens = tokenizer.tokenize(question)
         max_question_length = 100
@@ -243,38 +245,19 @@ def compress_sentences(args, batch_scores, batch_token_ids, tokenizer, ctxs, ctx
     ############################################
     ### Sentence compression using FiD score ###
     ############################################
-    # Preparing lists to store the results
-    
-    ## Decode 해서 더해줄 것이 아니라, 점수로... 어떻게 해야할듯..?
-    ## [ES] batch_len_context is not used
+
     titles = [ctx['title'] for ctx in ctxs]
 
-    ################
-    ## Temporal (USE IT FOR NQ ONLY)
-    # ctx_start_indices = []
-    # for batch_token_id in batch_token_ids:
-    #     ctx_start_indices.append(np.where(batch_token_id == 2625)[0][0] + 2)
-    ## original
     ctx_start_indices = get_ctx_start_indices(tokenizer, question, titles, pattern_str)
-    #################
-
     batch_eos_token_idx, batch_len_context = [], []
     for ctx_i, token_ids in enumerate(batch_token_ids):
-        eos_token_idx = np.where(token_ids == 1)[0][-1]
+        eos_token_idx = len(token_ids) ## For LLAMA
+
         batch_eos_token_idx.append(eos_token_idx)
         batch_len_context.append(eos_token_idx - ctx_start_indices[ctx_i])
 
     batch_scores_context = [batch_scores[i][ctx_start_indices[i]:eos_token_idx] for i, eos_token_idx in enumerate(batch_eos_token_idx)]
     batch_token_ids_context = [batch_token_ids[i][ctx_start_indices[i]:eos_token_idx] for i, eos_token_idx in enumerate(batch_eos_token_idx)]
-
-    ## split before sent_tokenize
-    # sents_list = []
-    # for ctx in ctxs:
-    #     lines = ctx['text'].split('\n')
-    #     sents = []
-    #     for line in lines:
-    #         sents.extend(sent_tokenize(line))
-    #     sents_list.append(sents)
 
     sents_list = [sent_tokenize(ctx['text']) for ctx in ctxs]
     split_token_ctxs = []

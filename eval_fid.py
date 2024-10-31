@@ -61,6 +61,7 @@ def evaluate(model, dataset, dataloader, tokenizer, opt):
         split = 'dev'
     else:
         raise ValueError(f"Unknown split in eval_data: {opt.eval_data}")
+
     idx_word_test = opt.eval_data.split('/')[-1].split('_').index(f"{split}.json")
 
     if idx_word_test == 0:
@@ -181,9 +182,10 @@ def evaluate(model, dataset, dataloader, tokenizer, opt):
     if not os.path.exists(os.path.dirname(token_score_path)):
         os.makedirs(os.path.dirname(token_score_path), exist_ok=True)
         
-    logger.warning(f'Saving token scores to {token_score_path}')
-    with open(token_score_path, 'wb') as f:
-        pickle.dump(token_scores_list, f)
+    if opt.write_crossattention_scores:
+        logger.warning(f'Saving token scores to {token_score_path}')
+        with open(token_score_path, 'wb') as f:
+            pickle.dump(token_scores_list, f)
     if opt.write_results:
         fw.close()
 

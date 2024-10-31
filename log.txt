@@ -1,0 +1,244 @@
+[09/09/2024 04:21:15] {compress.py:63} INFO - > As the dataset is longbench, n_contexts is set to None and pattern_str is set to context:
+[09/09/2024 04:21:15] {compress.py:73} INFO - > Original avg_len: longbench_multi_news 2624.47
+[09/09/2024 04:21:15] {compress.py:92} INFO - ###############################################
+[09/09/2024 04:21:15] {compress.py:93} INFO - > Dataset: longbench_multi_news
+[09/09/2024 04:21:15] {compress.py:94} INFO - > Start compressing data/0609_128_gpt_s_d_a64/longbench_multi_news_test.json
+[09/09/2024 04:21:15] {compress.py:95} INFO - > Token score path: token_scores/0609_128_gpt_s_d_a64_nq_cnn_v2_0904w_0/token_scores_list_longbench_multi_news.pkl
+[09/09/2024 04:21:15] {compress.py:96} INFO - > Original avg_len: 2624.47
+[09/09/2024 04:21:15] {compress.py:97} INFO - > Target comprrssion settings, target_length: 2000
+[09/09/2024 04:21:15] {compress.py:101} INFO - > comp_ctx: True (None), comp_sent: True (0.2), comp_tok: False
+[09/09/2024 04:21:15] {compress.py:131} INFO - > coarse_target_length: 2000.00, total_coarse_remove_tokens: 646.00
+[09/09/2024 04:21:15] {compress.py:63} INFO - > As the dataset is longbench, n_contexts is set to None and pattern_str is set to context:
+[09/09/2024 04:21:16] {compress.py:73} INFO - > Original avg_len: longbench_gov_report 10311.06
+[09/09/2024 04:21:16] {compress.py:92} INFO - ###############################################
+[09/09/2024 04:21:16] {compress.py:93} INFO - > Dataset: longbench_gov_report
+[09/09/2024 04:21:16] {compress.py:94} INFO - > Start compressing data/0609_128_gpt_s_d_a64/longbench_gov_report_test.json
+[09/09/2024 04:21:16] {compress.py:95} INFO - > Token score path: token_scores/0609_128_gpt_s_d_a64_nq_cnn_v2_0904w_0/token_scores_list_longbench_gov_report.pkl
+[09/09/2024 04:21:16] {compress.py:96} INFO - > Original avg_len: 10311.06
+[09/09/2024 04:21:16] {compress.py:97} INFO - > Target comprrssion settings, target_length: 2000
+[09/09/2024 04:21:16] {compress.py:101} INFO - > comp_ctx: True (None), comp_sent: True (0.2), comp_tok: False
+[09/09/2024 04:21:16] {compress.py:131} INFO - > coarse_target_length: 2000.00, total_coarse_remove_tokens: 8738.00
+[09/09/2024 04:21:18] {compress.py:310} INFO - Done compressing. time taken: 2.87s
+[09/09/2024 04:21:18] {compress.py:330} INFO - > Original avg_len: 2624.47 comp_ctx(None): 1884.38 comp_sent(0.2): 1648.80 (target_length: 2000)
+[09/09/2024 04:21:18] {compress.py:353} INFO - > Saving compressed data to data_compressed//0609_128_gpt_s_d_a64_nq_cnn_v2_0904w_0/longbench_multi_news_fid_2000_ctxTrue_sortFalse_sentTrue0.2_1_tokFalse0.json
+[09/09/2024 04:21:18] {compress.py:432} INFO - ###################################################
+[09/09/2024 04:21:25] {compress.py:310} INFO - Done compressing. time taken: 8.60s
+[09/09/2024 04:21:25] {compress.py:330} INFO - > Original avg_len: 10311.06 comp_ctx(None): 3742.78 comp_sent(0.2): 1994.48 (target_length: 2000)
+[09/09/2024 04:21:25] {compress.py:353} INFO - > Saving compressed data to data_compressed//0609_128_gpt_s_d_a64_nq_cnn_v2_0904w_0/longbench_gov_report_fid_2000_ctxTrue_sortFalse_sentTrue0.2_1_tokFalse0.json
+[09/09/2024 04:21:26] {compress.py:432} INFO - ###################################################
+[09/30/2024 01:01:06] {compress.py:66} INFO - > n_contexts: 20, pattern_str: title:
+[09/30/2024 01:01:06] {compress.py:73} INFO - > Original avg_len: llama3_need_ctx_testoracle 153.99
+[09/30/2024 01:01:06] {compress.py:92} INFO - ###############################################
+[09/30/2024 01:01:06] {compress.py:93} INFO - > Dataset: llama3_need_ctx_testoracle
+[09/30/2024 01:01:06] {compress.py:94} INFO - > Start compressing data/nq/llama3_need_ctx_testoracle.json
+[09/30/2024 01:01:06] {compress.py:95} INFO - > Token score path: token_scores/100_ours-base/token_scores_list_llama3_need_ctx_testoracle.pkl
+[09/30/2024 01:01:06] {compress.py:96} INFO - > Original avg_len: 153.99
+[09/30/2024 01:01:06] {compress.py:97} INFO - > Target comprrssion settings, target_length: 500
+[09/30/2024 01:01:06] {compress.py:101} INFO - > comp_ctx: True (None), comp_sent: True (0.2), comp_tok: False
+[09/30/2024 01:01:06] {compress.py:131} INFO - > coarse_target_length: 500.00, total_coarse_remove_tokens: -420.00
+[09/30/2024 01:01:07] {compress.py:310} INFO - Done compressing. time taken: 0.17s
+[09/30/2024 01:01:07] {compress.py:330} INFO - > Original avg_len: 153.99 comp_ctx(None): 153.99 comp_sent(0.2): 153.99 (target_length: 500)
+[09/30/2024 01:01:07] {compress.py:353} INFO - > Saving compressed data to data_compressed/100_ours-base/llama3_need_ctx_testoracle_20/fid_500_ctxTrue_sortTrue_sentTrue0.2_1_tokFalse0.jsonl.gz
+[09/30/2024 01:01:07] {compress.py:432} INFO - ###################################################
+[09/30/2024 01:01:08] {compress.py:66} INFO - > n_contexts: 20, pattern_str: title:
+[09/30/2024 01:01:08] {compress.py:73} INFO - > Original avg_len: llama3_need_ctx_testoracle 153.99
+[09/30/2024 01:01:08] {compress.py:92} INFO - ###############################################
+[09/30/2024 01:01:08] {compress.py:93} INFO - > Dataset: llama3_need_ctx_testoracle
+[09/30/2024 01:01:08] {compress.py:94} INFO - > Start compressing data/nq/llama3_need_ctx_testoracle.json
+[09/30/2024 01:01:08] {compress.py:95} INFO - > Token score path: token_scores/50_ours-base/token_scores_list_llama3_need_ctx_testoracle.pkl
+[09/30/2024 01:01:08] {compress.py:96} INFO - > Original avg_len: 153.99
+[09/30/2024 01:01:08] {compress.py:97} INFO - > Target comprrssion settings, target_length: 500
+[09/30/2024 01:01:08] {compress.py:101} INFO - > comp_ctx: True (None), comp_sent: True (0.2), comp_tok: False
+[09/30/2024 01:01:08] {compress.py:131} INFO - > coarse_target_length: 500.00, total_coarse_remove_tokens: -420.00
+[09/30/2024 01:01:08] {compress.py:310} INFO - Done compressing. time taken: 0.19s
+[09/30/2024 01:01:08] {compress.py:330} INFO - > Original avg_len: 153.99 comp_ctx(None): 153.99 comp_sent(0.2): 153.99 (target_length: 500)
+[09/30/2024 01:01:08] {compress.py:353} INFO - > Saving compressed data to data_compressed/50_ours-base/llama3_need_ctx_testoracle_20/fid_500_ctxTrue_sortTrue_sentTrue0.2_1_tokFalse0.jsonl.gz
+[09/30/2024 01:01:08] {compress.py:432} INFO - ###################################################
+[09/30/2024 01:01:23] {compress.py:66} INFO - > n_contexts: 20, pattern_str: title:
+[09/30/2024 01:01:23] {compress.py:73} INFO - > Original avg_len: llama3_need_ctx_testoracle 153.99
+[09/30/2024 01:01:23] {compress.py:92} INFO - ###############################################
+[09/30/2024 01:01:23] {compress.py:93} INFO - > Dataset: llama3_need_ctx_testoracle
+[09/30/2024 01:01:23] {compress.py:94} INFO - > Start compressing data/nq/llama3_need_ctx_testoracle.json
+[09/30/2024 01:01:23] {compress.py:95} INFO - > Token score path: token_scores/100_ours-base/token_scores_list_llama3_need_ctx_testoracle.pkl
+[09/30/2024 01:01:23] {compress.py:96} INFO - > Original avg_len: 153.99
+[09/30/2024 01:01:23] {compress.py:97} INFO - > Target comprrssion settings, target_length: 100
+[09/30/2024 01:01:23] {compress.py:101} INFO - > comp_ctx: True (None), comp_sent: True (0.2), comp_tok: False
+[09/30/2024 01:01:23] {compress.py:131} INFO - > coarse_target_length: 100.00, total_coarse_remove_tokens: -20.00
+[09/30/2024 01:01:26] {compress.py:310} INFO - Done compressing. time taken: 2.07s
+[09/30/2024 01:01:26] {compress.py:330} INFO - > Original avg_len: 153.99 comp_ctx(None): 153.99 comp_sent(0.2): 79.82 (target_length: 100)
+[09/30/2024 01:01:26] {compress.py:353} INFO - > Saving compressed data to data_compressed/100_ours-base/llama3_need_ctx_testoracle_20/fid_100_ctxTrue_sortTrue_sentTrue0.2_1_tokFalse0.jsonl.gz
+[09/30/2024 01:01:26] {compress.py:432} INFO - ###################################################
+[09/30/2024 01:01:29] {compress.py:66} INFO - > n_contexts: 20, pattern_str: title:
+[09/30/2024 01:01:29] {compress.py:73} INFO - > Original avg_len: llama3_need_ctx_testoracle 153.99
+[09/30/2024 01:01:29] {compress.py:92} INFO - ###############################################
+[09/30/2024 01:01:29] {compress.py:93} INFO - > Dataset: llama3_need_ctx_testoracle
+[09/30/2024 01:01:29] {compress.py:94} INFO - > Start compressing data/nq/llama3_need_ctx_testoracle.json
+[09/30/2024 01:01:29] {compress.py:95} INFO - > Token score path: token_scores/50_ours-base/token_scores_list_llama3_need_ctx_testoracle.pkl
+[09/30/2024 01:01:29] {compress.py:96} INFO - > Original avg_len: 153.99
+[09/30/2024 01:01:29] {compress.py:97} INFO - > Target comprrssion settings, target_length: 50
+[09/30/2024 01:01:29] {compress.py:101} INFO - > comp_ctx: True (None), comp_sent: True (0.2), comp_tok: False
+[09/30/2024 01:01:29] {compress.py:131} INFO - > coarse_target_length: 50.00, total_coarse_remove_tokens: 30.00
+[09/30/2024 01:01:31] {compress.py:310} INFO - Done compressing. time taken: 2.02s
+[09/30/2024 01:01:31] {compress.py:330} INFO - > Original avg_len: 153.99 comp_ctx(None): 153.99 comp_sent(0.2): 38.28 (target_length: 50)
+[09/30/2024 01:01:31] {compress.py:353} INFO - > Saving compressed data to data_compressed/50_ours-base/llama3_need_ctx_testoracle_20/fid_50_ctxTrue_sortTrue_sentTrue0.2_1_tokFalse0.jsonl.gz
+[09/30/2024 01:01:31] {compress.py:432} INFO - ###################################################
+[09/29/2024 19:20:08] {compress.py:67} INFO - > n_contexts: 20, pattern_str: title:
+[09/29/2024 19:20:08] {compress.py:74} INFO - > Original avg_len: llama3_need_ctx_testoracle 153.99
+[09/29/2024 19:20:08] {compress.py:93} INFO - ###############################################
+[09/29/2024 19:20:08] {compress.py:94} INFO - > Dataset: llama3_need_ctx_testoracle
+[09/29/2024 19:20:08] {compress.py:95} INFO - > Start compressing data/nq/llama3_need_ctx_testoracle.json
+[09/29/2024 19:20:08] {compress.py:96} INFO - > Token score path: token_scores/token_scores_list_llama3_need_ctx_testoracle_byICAE.pkl
+[09/29/2024 19:20:08] {compress.py:97} INFO - > Original avg_len: 153.99
+[09/29/2024 19:20:08] {compress.py:98} INFO - > Target comprrssion settings, target_length: 100
+[09/29/2024 19:20:08] {compress.py:102} INFO - > comp_ctx: True (None), comp_sent: True (0.2), comp_tok: False
+[09/29/2024 19:20:08] {compress.py:132} INFO - > coarse_target_length: 100.00, total_coarse_remove_tokens: -20.00
+[09/29/2024 19:21:39] {compress.py:67} INFO - > n_contexts: 20, pattern_str: title:
+[09/29/2024 19:21:39] {compress.py:74} INFO - > Original avg_len: llama3_need_ctx_testoracle 153.99
+[09/29/2024 19:21:39] {compress.py:93} INFO - ###############################################
+[09/29/2024 19:21:39] {compress.py:94} INFO - > Dataset: llama3_need_ctx_testoracle
+[09/29/2024 19:21:39] {compress.py:95} INFO - > Start compressing data/nq/llama3_need_ctx_testoracle.json
+[09/29/2024 19:21:39] {compress.py:96} INFO - > Token score path: token_scores/token_scores_list_llama3_need_ctx_testoracle_byICAE.pkl
+[09/29/2024 19:21:39] {compress.py:97} INFO - > Original avg_len: 153.99
+[09/29/2024 19:21:39] {compress.py:98} INFO - > Target comprrssion settings, target_length: 100
+[09/29/2024 19:21:39] {compress.py:102} INFO - > comp_ctx: True (None), comp_sent: True (0.2), comp_tok: False
+[09/29/2024 19:21:39] {compress.py:132} INFO - > coarse_target_length: 100.00, total_coarse_remove_tokens: -20.00
+[09/29/2024 19:21:41] {compress.py:311} INFO - Done compressing. time taken: 2.56s
+[09/29/2024 19:21:41] {compress.py:331} INFO - > Original avg_len: 153.99 comp_ctx(None): 153.99 comp_sent(0.2): 82.32 (target_length: 100)
+[09/29/2024 19:21:41] {compress.py:354} INFO - > Saving compressed data to data_compressed/icae/llama3_need_ctx_testoracle_20/fid_100_ctxTrue_sortTrue_sentTrue0.2_1_tokFalse0.jsonl.gz
+[09/29/2024 19:21:41] {compress.py:433} INFO - ###################################################
+[09/29/2024 19:21:59] {compress.py:67} INFO - > n_contexts: 20, pattern_str: title:
+[09/29/2024 19:21:59] {compress.py:74} INFO - > Original avg_len: llama3_need_ctx_testoracle 153.99
+[09/29/2024 19:21:59] {compress.py:93} INFO - ###############################################
+[09/29/2024 19:21:59] {compress.py:94} INFO - > Dataset: llama3_need_ctx_testoracle
+[09/29/2024 19:21:59] {compress.py:95} INFO - > Start compressing data/nq/llama3_need_ctx_testoracle.json
+[09/29/2024 19:21:59] {compress.py:96} INFO - > Token score path: token_scores/token_scores_list_llama3_need_ctx_testoracle_byICAE.pkl
+[09/29/2024 19:21:59] {compress.py:97} INFO - > Original avg_len: 153.99
+[09/29/2024 19:21:59] {compress.py:98} INFO - > Target comprrssion settings, target_length: 50
+[09/29/2024 19:21:59] {compress.py:102} INFO - > comp_ctx: True (None), comp_sent: True (0.2), comp_tok: False
+[09/29/2024 19:21:59] {compress.py:132} INFO - > coarse_target_length: 50.00, total_coarse_remove_tokens: 30.00
+[09/29/2024 19:22:02] {compress.py:311} INFO - Done compressing. time taken: 2.66s
+[09/29/2024 19:22:02] {compress.py:331} INFO - > Original avg_len: 153.99 comp_ctx(None): 153.99 comp_sent(0.2): 38.34 (target_length: 50)
+[09/29/2024 19:22:02] {compress.py:354} INFO - > Saving compressed data to data_compressed/icae/llama3_need_ctx_testoracle_20/fid_50_ctxTrue_sortTrue_sentTrue0.2_1_tokFalse0.jsonl.gz
+[09/29/2024 19:22:02] {compress.py:433} INFO - ###################################################
+[09/30/2024 05:12:56] {compress.py:67} INFO - > n_contexts: 20, pattern_str: title:
+[09/30/2024 05:12:56] {compress.py:74} INFO - > Original avg_len: llama3_need_ctx_testoracle 153.99
+[09/30/2024 05:12:56] {compress.py:93} INFO - ###############################################
+[09/30/2024 05:12:56] {compress.py:94} INFO - > Dataset: llama3_need_ctx_testoracle
+[09/30/2024 05:12:56] {compress.py:95} INFO - > Start compressing data/nq/llama3_need_ctx_testoracle.json
+[09/30/2024 05:12:56] {compress.py:96} INFO - > Token score path: token_scores/token_scores_list_llama3_need_ctx_testoracle_byICAE.pkl
+[09/30/2024 05:12:56] {compress.py:97} INFO - > Original avg_len: 153.99
+[09/30/2024 05:12:56] {compress.py:98} INFO - > Target comprrssion settings, target_length: 100
+[09/30/2024 05:12:56] {compress.py:102} INFO - > comp_ctx: False (None), comp_sent: True (0.2), comp_tok: False
+[09/30/2024 05:12:56] {compress.py:132} INFO - > coarse_target_length: 100.00, total_coarse_remove_tokens: -20.00
+[09/30/2024 05:13:18] {compress.py:67} INFO - > n_contexts: 20, pattern_str: title:
+[09/30/2024 05:13:18] {compress.py:74} INFO - > Original avg_len: llama3_need_ctx_testoracle 153.99
+[09/30/2024 05:13:18] {compress.py:93} INFO - ###############################################
+[09/30/2024 05:13:18] {compress.py:94} INFO - > Dataset: llama3_need_ctx_testoracle
+[09/30/2024 05:13:18] {compress.py:95} INFO - > Start compressing data/nq/llama3_need_ctx_testoracle.json
+[09/30/2024 05:13:18] {compress.py:96} INFO - > Token score path: token_scores/token_scores_list_llama3_need_ctx_testoracle_byICAE.pkl
+[09/30/2024 05:13:18] {compress.py:97} INFO - > Original avg_len: 153.99
+[09/30/2024 05:13:18] {compress.py:98} INFO - > Target comprrssion settings, target_length: 100
+[09/30/2024 05:13:18] {compress.py:102} INFO - > comp_ctx: False (None), comp_sent: True (0.2), comp_tok: False
+[09/30/2024 05:13:18] {compress.py:132} INFO - > coarse_target_length: 100.00, total_coarse_remove_tokens: -20.00
+[09/30/2024 05:13:20] {compress.py:311} INFO - Done compressing. time taken: 1.91s
+[09/30/2024 05:13:20] {compress.py:331} INFO - > Original avg_len: 153.99 comp_sent(0.2): 82.32 (target_length: 100)
+[09/30/2024 05:13:20] {compress.py:354} INFO - > Saving compressed data to data_compressed/icae/llama3_need_ctx_testoracle_20/fid_100_ctxFalse_sortFalse_sentTrue0.2_1_tokFalse0.jsonl.gz
+[09/30/2024 05:13:20] {compress.py:433} INFO - ###################################################
+[09/30/2024 05:13:45] {compress.py:67} INFO - > n_contexts: 20, pattern_str: title:
+[09/30/2024 05:13:45] {compress.py:74} INFO - > Original avg_len: llama3_need_ctx_testoracle 153.99
+[09/30/2024 05:13:45] {compress.py:93} INFO - ###############################################
+[09/30/2024 05:13:45] {compress.py:94} INFO - > Dataset: llama3_need_ctx_testoracle
+[09/30/2024 05:13:45] {compress.py:95} INFO - > Start compressing data/nq/llama3_need_ctx_testoracle.json
+[09/30/2024 05:13:45] {compress.py:96} INFO - > Token score path: token_scores/token_scores_list_llama3_need_ctx_testoracle_byICAE.pkl
+[09/30/2024 05:13:45] {compress.py:97} INFO - > Original avg_len: 153.99
+[09/30/2024 05:13:45] {compress.py:98} INFO - > Target comprrssion settings, target_length: 50
+[09/30/2024 05:13:45] {compress.py:102} INFO - > comp_ctx: False (None), comp_sent: True (0.2), comp_tok: False
+[09/30/2024 05:13:45] {compress.py:132} INFO - > coarse_target_length: 50.00, total_coarse_remove_tokens: 30.00
+[09/30/2024 05:13:47] {compress.py:311} INFO - Done compressing. time taken: 1.98s
+[09/30/2024 05:13:47] {compress.py:331} INFO - > Original avg_len: 153.99 comp_sent(0.2): 38.34 (target_length: 50)
+[09/30/2024 05:13:47] {compress.py:354} INFO - > Saving compressed data to data_compressed/icae/llama3_need_ctx_testoracle_20/fid_50_ctxFalse_sortFalse_sentTrue0.2_1_tokFalse0.jsonl.gz
+[09/30/2024 05:13:47] {compress.py:433} INFO - ###################################################
+[09/30/2024 05:15:32] {compress.py:67} INFO - > n_contexts: 20, pattern_str: title:
+[09/30/2024 05:15:32] {compress.py:74} INFO - > Original avg_len: llama3_need_ctx_testoracle 153.99
+[09/30/2024 05:15:32] {compress.py:93} INFO - ###############################################
+[09/30/2024 05:15:32] {compress.py:94} INFO - > Dataset: llama3_need_ctx_testoracle
+[09/30/2024 05:15:32] {compress.py:95} INFO - > Start compressing data/nq/llama3_need_ctx_testoracle.json
+[09/30/2024 05:15:32] {compress.py:96} INFO - > Token score path: token_scores/token_scores_list_llama3_need_ctx_testoracle_byICAE.pkl
+[09/30/2024 05:15:32] {compress.py:97} INFO - > Original avg_len: 153.99
+[09/30/2024 05:15:32] {compress.py:98} INFO - > Target comprrssion settings, target_length: 120
+[09/30/2024 05:15:32] {compress.py:102} INFO - > comp_ctx: False (None), comp_sent: True (0.2), comp_tok: False
+[09/30/2024 05:15:32] {compress.py:132} INFO - > coarse_target_length: 120.00, total_coarse_remove_tokens: -40.00
+[09/30/2024 05:15:34] {compress.py:311} INFO - Done compressing. time taken: 1.74s
+[09/30/2024 05:15:34] {compress.py:331} INFO - > Original avg_len: 153.99 comp_sent(0.2): 99.56 (target_length: 120)
+[09/30/2024 05:15:34] {compress.py:354} INFO - > Saving compressed data to data_compressed/icae/llama3_need_ctx_testoracle_20/fid_120_ctxFalse_sortFalse_sentTrue0.2_1_tokFalse0.jsonl.gz
+[09/30/2024 05:15:34] {compress.py:433} INFO - ###################################################
+[09/30/2024 05:15:45] {compress.py:67} INFO - > n_contexts: 20, pattern_str: title:
+[09/30/2024 05:15:45] {compress.py:74} INFO - > Original avg_len: llama3_need_ctx_testoracle 153.99
+[09/30/2024 05:15:45] {compress.py:93} INFO - ###############################################
+[09/30/2024 05:15:45] {compress.py:94} INFO - > Dataset: llama3_need_ctx_testoracle
+[09/30/2024 05:15:45] {compress.py:95} INFO - > Start compressing data/nq/llama3_need_ctx_testoracle.json
+[09/30/2024 05:15:45] {compress.py:96} INFO - > Token score path: token_scores/token_scores_list_llama3_need_ctx_testoracle_byICAE.pkl
+[09/30/2024 05:15:45] {compress.py:97} INFO - > Original avg_len: 153.99
+[09/30/2024 05:15:45] {compress.py:98} INFO - > Target comprrssion settings, target_length: 80
+[09/30/2024 05:15:45] {compress.py:102} INFO - > comp_ctx: False (None), comp_sent: True (0.2), comp_tok: False
+[09/30/2024 05:15:45] {compress.py:132} INFO - > coarse_target_length: 80.00, total_coarse_remove_tokens: 0.00
+[09/30/2024 05:15:47] {compress.py:311} INFO - Done compressing. time taken: 2.01s
+[09/30/2024 05:15:47] {compress.py:331} INFO - > Original avg_len: 153.99 comp_sent(0.2): 61.75 (target_length: 80)
+[09/30/2024 05:15:47] {compress.py:354} INFO - > Saving compressed data to data_compressed/icae/llama3_need_ctx_testoracle_20/fid_80_ctxFalse_sortFalse_sentTrue0.2_1_tokFalse0.jsonl.gz
+[09/30/2024 05:15:47] {compress.py:433} INFO - ###################################################
+[09/30/2024 05:15:55] {compress.py:67} INFO - > n_contexts: 20, pattern_str: title:
+[09/30/2024 05:15:56] {compress.py:74} INFO - > Original avg_len: llama3_need_ctx_testoracle 153.99
+[09/30/2024 05:15:56] {compress.py:93} INFO - ###############################################
+[09/30/2024 05:15:56] {compress.py:94} INFO - > Dataset: llama3_need_ctx_testoracle
+[09/30/2024 05:15:56] {compress.py:95} INFO - > Start compressing data/nq/llama3_need_ctx_testoracle.json
+[09/30/2024 05:15:56] {compress.py:96} INFO - > Token score path: token_scores/token_scores_list_llama3_need_ctx_testoracle_byICAE.pkl
+[09/30/2024 05:15:56] {compress.py:97} INFO - > Original avg_len: 153.99
+[09/30/2024 05:15:56] {compress.py:98} INFO - > Target comprrssion settings, target_length: 70
+[09/30/2024 05:15:56] {compress.py:102} INFO - > comp_ctx: False (None), comp_sent: True (0.2), comp_tok: False
+[09/30/2024 05:15:56] {compress.py:132} INFO - > coarse_target_length: 70.00, total_coarse_remove_tokens: 10.00
+[09/30/2024 05:15:58] {compress.py:311} INFO - Done compressing. time taken: 1.97s
+[09/30/2024 05:15:58] {compress.py:331} INFO - > Original avg_len: 153.99 comp_sent(0.2): 50.40 (target_length: 70)
+[09/30/2024 05:15:58] {compress.py:354} INFO - > Saving compressed data to data_compressed/icae/llama3_need_ctx_testoracle_20/fid_70_ctxFalse_sortFalse_sentTrue0.2_1_tokFalse0.jsonl.gz
+[09/30/2024 05:15:58] {compress.py:433} INFO - ###################################################
+[09/29/2024 20:18:13] {compress.py:67} INFO - > n_contexts: 20, pattern_str: title:
+[09/29/2024 20:18:13] {compress.py:74} INFO - > Original avg_len: llama3_need_ctx_testoracle 153.99
+[09/29/2024 20:18:13] {compress.py:93} INFO - ###############################################
+[09/29/2024 20:18:13] {compress.py:94} INFO - > Dataset: llama3_need_ctx_testoracle
+[09/29/2024 20:18:13] {compress.py:95} INFO - > Start compressing data/nq/llama3_need_ctx_testoracle.json
+[09/29/2024 20:18:13] {compress.py:96} INFO - > Token score path: token_scores/token_scores_list_llama3_need_ctx_testoracle.pkl
+[09/29/2024 20:18:13] {compress.py:97} INFO - > Original avg_len: 153.99
+[09/29/2024 20:18:13] {compress.py:98} INFO - > Target comprrssion settings, target_length: 80
+[09/29/2024 20:18:13] {compress.py:102} INFO - > comp_ctx: False (None), comp_sent: True (0.2), comp_tok: False
+[09/29/2024 20:18:13] {compress.py:132} INFO - > coarse_target_length: 80.00, total_coarse_remove_tokens: 0.00
+[09/29/2024 20:18:16] {compress.py:311} INFO - Done compressing. time taken: 2.32s
+[09/29/2024 20:18:16] {compress.py:331} INFO - > Original avg_len: 153.99 comp_sent(0.2): 57.33 (target_length: 80)
+[09/29/2024 20:18:16] {compress.py:354} INFO - > Saving compressed data to data_compressed/500_ours-base/llama3_need_ctx_testoracle_20/fid_80_ctxFalse_sortFalse_sentTrue0.2_1_tokFalse0.jsonl.gz
+[09/29/2024 20:18:16] {compress.py:433} INFO - ###################################################
+[09/29/2024 20:18:25] {compress.py:67} INFO - > n_contexts: 20, pattern_str: title:
+[09/29/2024 20:18:25] {compress.py:74} INFO - > Original avg_len: llama3_need_ctx_testoracle 153.99
+[09/29/2024 20:18:25] {compress.py:93} INFO - ###############################################
+[09/29/2024 20:18:25] {compress.py:94} INFO - > Dataset: llama3_need_ctx_testoracle
+[09/29/2024 20:18:25] {compress.py:95} INFO - > Start compressing data/nq/llama3_need_ctx_testoracle.json
+[09/29/2024 20:18:25] {compress.py:96} INFO - > Token score path: token_scores/token_scores_list_llama3_need_ctx_testoracle.pkl
+[09/29/2024 20:18:25] {compress.py:97} INFO - > Original avg_len: 153.99
+[09/29/2024 20:18:25] {compress.py:98} INFO - > Target comprrssion settings, target_length: 70
+[09/29/2024 20:18:25] {compress.py:102} INFO - > comp_ctx: False (None), comp_sent: True (0.2), comp_tok: False
+[09/29/2024 20:18:25] {compress.py:132} INFO - > coarse_target_length: 70.00, total_coarse_remove_tokens: 10.00
+[09/29/2024 20:18:27] {compress.py:311} INFO - Done compressing. time taken: 2.35s
+[09/29/2024 20:18:27] {compress.py:331} INFO - > Original avg_len: 153.99 comp_sent(0.2): 46.31 (target_length: 70)
+[09/29/2024 20:18:27] {compress.py:354} INFO - > Saving compressed data to data_compressed/500_ours-base/llama3_need_ctx_testoracle_20/fid_70_ctxFalse_sortFalse_sentTrue0.2_1_tokFalse0.jsonl.gz
+[09/29/2024 20:18:27] {compress.py:433} INFO - ###################################################
+[09/29/2024 20:18:36] {compress.py:67} INFO - > n_contexts: 20, pattern_str: title:
+[09/29/2024 20:18:37] {compress.py:74} INFO - > Original avg_len: llama3_need_ctx_testoracle 153.99
+[09/29/2024 20:18:37] {compress.py:93} INFO - ###############################################
+[09/29/2024 20:18:37] {compress.py:94} INFO - > Dataset: llama3_need_ctx_testoracle
+[09/29/2024 20:18:37] {compress.py:95} INFO - > Start compressing data/nq/llama3_need_ctx_testoracle.json
+[09/29/2024 20:18:37] {compress.py:96} INFO - > Token score path: token_scores/token_scores_list_llama3_need_ctx_testoracle.pkl
+[09/29/2024 20:18:37] {compress.py:97} INFO - > Original avg_len: 153.99
+[09/29/2024 20:18:37] {compress.py:98} INFO - > Target comprrssion settings, target_length: 120
+[09/29/2024 20:18:37] {compress.py:102} INFO - > comp_ctx: False (None), comp_sent: True (0.2), comp_tok: False
+[09/29/2024 20:18:37] {compress.py:132} INFO - > coarse_target_length: 120.00, total_coarse_remove_tokens: -40.00
+[09/29/2024 20:18:39] {compress.py:311} INFO - Done compressing. time taken: 2.05s
+[09/29/2024 20:18:39] {compress.py:331} INFO - > Original avg_len: 153.99 comp_sent(0.2): 98.78 (target_length: 120)
+[09/29/2024 20:18:39] {compress.py:354} INFO - > Saving compressed data to data_compressed/500_ours-base/llama3_need_ctx_testoracle_20/fid_120_ctxFalse_sortFalse_sentTrue0.2_1_tokFalse0.jsonl.gz
+[09/29/2024 20:18:39] {compress.py:433} INFO - ###################################################

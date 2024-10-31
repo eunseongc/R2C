@@ -48,36 +48,13 @@ class Dataset(torch.utils.data.Dataset):
         example = self.data[index]
         
         ex_question = example['question']
-        if ex_question == '':
-            ex_question = "Now, write a one-page summary of the report."
-        #     ex_question = "what is the main theme"
-        #     ex_question = "what is the title of the text"
-        #     ex_question = "what is it about" #################### 현재 1등
-        #     ex_question = "What is the main idea?"
-        #     ex_question = self.opt.pseudo_question
-        #     ex_question = "Can you provide a brief summary of this text?"
-        #     ex_question = "what is the purpose of this part"
-        #     print(f">> Empty question: {example['id']} >> replace with {ex_question}")
-        # print(ex_question)
-
         ex_question_tokens = self.t5_tok.tokenize(ex_question)
-        # print(len(ex_question_tokens))
         if len(ex_question_tokens) > 100:
             print(f">> Long question: {example['id']} >> {len(ex_question_tokens)}")
             ex_question = self.t5_tok.convert_tokens_to_string(ex_question_tokens[-100:])
-            # print(ex_question)
 
         task = example['task']
         question = self.question_prefix + " " + ex_question
-        ## I tried question denoising...
-        # if self.is_eval:
-        #     question = self.question_prefix + " " + ex_question
-        # else:
-        #     dice = random.random()
-        #     if dice < 0.05:
-        #         question = self.question_prefix + " "
-        #     else:
-        #         question = self.question_prefix + " " + ex_question
 
         target = self.get_target(example)
 
@@ -233,6 +210,8 @@ class Collator(object):
                 text_passages = [append_question(example, self.extra_question) for example in batch]
             elif self.mode == 'single':
                 text_passages = [[p for p in example['passages']] + [example['question']] for example in batch]
+            else:
+                raise ValueError(f"Invalid mode, {self.mode}, choose from 'pair' or 'single'")
 
             passage_ids, passage_masks = encode_passages(text_passages,
                                                          self.tokenizer,
