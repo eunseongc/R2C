@@ -53,7 +53,7 @@ class Dataset(torch.utils.data.Dataset):
             print(f">> Long question: {example['id']} >> {len(ex_question_tokens)}")
             ex_question = self.t5_tok.convert_tokens_to_string(ex_question_tokens[-100:])
 
-        task = example['task']
+        task = example.get('task')
         question = self.question_prefix + " " + ex_question
 
         target = self.get_target(example)
@@ -62,7 +62,7 @@ class Dataset(torch.utils.data.Dataset):
             text_format_passage = self.passage_prefix + " {}"
             text_format_title_passage = self.title_prefix + " {} " + self.passage_prefix + " {}"
 
-            if example['task'] == 'qa':
+            if task == 'qa':
                 contexts = example['ctxs'][:self.n_contexts]
             else:
                 contexts = example['ctxs']
