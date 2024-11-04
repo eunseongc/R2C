@@ -338,3 +338,143 @@
 [11/04/2024 21:24:02] {compress.py:306} INFO - > Original avg_len: 393.33 comp_ctx(0.8): 250.44 comp_sent(0.2): 243.49 (target_length: 300)
 [11/04/2024 21:24:02] {compress.py:319} INFO - > Saving compressed data to data_compressed/PwC/PwC_20/fid_300_ctxTrue_sortFalse_sentTrue0.2_1_tokFalse0.jsonl.gz
 [11/04/2024 21:24:03] {compress.py:394} INFO - ###################################################
+[11/04/2024 21:28:19] {compress.py:69} INFO - > n_contexts: 20, pattern_str: context:
+[11/04/2024 21:28:19] {compress.py:76} INFO - > Original avg_len: PwC 393.33
+[11/04/2024 21:28:19] {compress.py:84} INFO - ###############################################
+[11/04/2024 21:28:19] {compress.py:85} INFO - > Dataset: PwC
+[11/04/2024 21:28:19] {compress.py:86} INFO - > Start compressing data/PwC/PwC_test_fid_unique_context.json
+[11/04/2024 21:28:19] {compress.py:87} INFO - > Token score path: token_scores/PwC/token_scores_list_PwC_test_unique_ours_base.pkl
+[11/04/2024 21:28:19] {compress.py:88} INFO - > Original avg_len: 393.33
+[11/04/2024 21:28:19] {compress.py:89} INFO - > Target comprrssion settings, target_length: 300
+[11/04/2024 21:28:19] {compress.py:93} INFO - > comp_ctx: True (0.8), comp_sent: True (0.2), comp_tok: False
+[11/04/2024 21:28:19] {compress.py:125} INFO - > coarse_target_length: 300.00, total_coarse_remove_tokens: 70.00
+[11/04/2024 21:28:21] {compress.py:286} INFO - Done compressing. time taken: 1.84s
+[11/04/2024 21:28:21] {compress.py:306} INFO - > Original avg_len: 393.33 comp_ctx(0.8): 250.44 comp_sent(0.2): 243.49 (target_length: 300)
+[11/04/2024 21:28:21] {compress.py:319} INFO - > Saving compressed data to data_compressed/PwC/PwC_20/fid_300_ctxTrue_sortFalse_sentTrue0.2_1_tokFalse0.jsonl.gz
+[11/04/2024 21:28:21] {compress.py:394} INFO - ###################################################
+[11/04/2024 21:32:36] {compress.py:69} INFO - > n_contexts: 20, pattern_str: context:
+[11/04/2024 21:32:36] {compress.py:76} INFO - > Original avg_len: PwC 393.33
+[11/04/2024 21:32:36] {compress.py:84} INFO - ###############################################
+[11/04/2024 21:32:36] {compress.py:85} INFO - > Dataset: PwC
+[11/04/2024 21:32:36] {compress.py:86} INFO - > Start compressing data/PwC/PwC_test_fid_unique_context.json
+[11/04/2024 21:32:36] {compress.py:87} INFO - > Token score path: token_scores/PwC/token_scores_list_PwC_test_unique_ours_base.pkl
+[11/04/2024 21:32:36] {compress.py:88} INFO - > Original avg_len: 393.33
+[11/04/2024 21:32:36] {compress.py:89} INFO - > Target comprrssion settings, target_length: 300
+[11/04/2024 21:32:36] {compress.py:93} INFO - > comp_ctx: True (0.8), comp_sent: True (0.2), comp_tok: False
+[11/04/2024 21:32:36] {compress.py:125} INFO - > coarse_target_length: 300.00, total_coarse_remove_tokens: 70.00
+[11/04/2024 21:32:38] {compress.py:286} INFO - Done compressing. time taken: 1.77s
+[11/04/2024 21:32:38] {compress.py:306} INFO - > Original avg_len: 393.33 comp_ctx(0.8): 250.44 comp_sent(0.2): 243.49 (target_length: 300)
+[11/04/2024 21:32:38] {compress.py:322} INFO - > Saving compressed data to data_compressed/PwC/PwC/PwC_test_fid_unique_context_fid_300_ctxTrue_sortFalse_sentTrue0.2_1_tokFalse0.jsonl.gz
+[11/04/2024 21:32:38] {compress.py:397} INFO - ###################################################
+[11/04/2024 21:35:27] {compress.py:69} INFO - > n_contexts: 20, pattern_str: context:
+[11/04/2024 21:35:27] {compress.py:76} INFO - > Original avg_len: PwC 393.33
+[11/04/2024 21:35:27] {compress.py:84} INFO - ###############################################
+[11/04/2024 21:35:27] {compress.py:85} INFO - > Dataset: PwC
+[11/04/2024 21:35:27] {compress.py:86} INFO - > Start compressing data/PwC/PwC_test_fid_unique_context.json
+[11/04/2024 21:35:27] {compress.py:87} INFO - > Token score path: token_scores/PwC/token_scores_list_PwC_test_unique_ours_base.pkl
+[11/04/2024 21:35:27] {compress.py:88} INFO - > Original avg_len: 393.33
+[11/04/2024 21:35:27] {compress.py:89} INFO - > Target comprrssion settings, target_length: 300
+[11/04/2024 21:35:27] {compress.py:93} INFO - > comp_ctx: True (0.8), comp_sent: True (0.2), comp_tok: False
+[11/04/2024 21:35:27] {compress.py:125} INFO - > coarse_target_length: 300.00, total_coarse_remove_tokens: 70.00
+[11/04/2024 21:38:55] {compress.py:69} INFO - > n_contexts: None, pattern_str: context:
+[11/04/2024 21:38:55] {compress.py:76} INFO - > Original avg_len: PwC 393.33
+[11/04/2024 21:38:55] {compress.py:84} INFO - ###############################################
+[11/04/2024 21:38:55] {compress.py:85} INFO - > Dataset: PwC
+[11/04/2024 21:38:55] {compress.py:86} INFO - > Start compressing data/PwC/PwC_test_fid_unique_context.json
+[11/04/2024 21:38:55] {compress.py:87} INFO - > Token score path: token_scores/PwC/token_scores_list_PwC_test_unique_ours_base.pkl
+[11/04/2024 21:38:55] {compress.py:88} INFO - > Original avg_len: 393.33
+[11/04/2024 21:38:55] {compress.py:89} INFO - > Target comprrssion settings, target_length: 300
+[11/04/2024 21:38:55] {compress.py:93} INFO - > comp_ctx: True (0.8), comp_sent: True (0.2), comp_tok: False
+[11/04/2024 21:38:55] {compress.py:123} INFO - > coarse_target_length: 300.00, total_coarse_remove_tokens: 70.00
+[11/04/2024 21:39:37] {compress.py:69} INFO - > n_contexts: None, pattern_str: context:
+[11/04/2024 21:39:38] {compress.py:76} INFO - > Original avg_len: PwC 393.33
+[11/04/2024 21:39:38] {compress.py:84} INFO - ###############################################
+[11/04/2024 21:39:38] {compress.py:85} INFO - > Dataset: PwC
+[11/04/2024 21:39:38] {compress.py:86} INFO - > Start compressing data/PwC/PwC_test_fid_unique_context.json
+[11/04/2024 21:39:38] {compress.py:87} INFO - > Token score path: token_scores/PwC/token_scores_list_PwC_test_unique_ours_base.pkl
+[11/04/2024 21:39:38] {compress.py:88} INFO - > Original avg_len: 393.33
+[11/04/2024 21:39:38] {compress.py:89} INFO - > Target comprrssion settings, target_length: 300
+[11/04/2024 21:39:38] {compress.py:93} INFO - > comp_ctx: True (0.8), comp_sent: True (0.2), comp_tok: False
+[11/04/2024 21:39:38] {compress.py:123} INFO - > coarse_target_length: 300.00, total_coarse_remove_tokens: 70.00
+[11/04/2024 21:44:06] {compress.py:69} INFO - > n_contexts: None, pattern_str: context:
+[11/04/2024 21:44:07] {compress.py:76} INFO - > Original avg_len: PwC 393.33
+[11/04/2024 21:44:07] {compress.py:84} INFO - ###############################################
+[11/04/2024 21:44:07] {compress.py:85} INFO - > Dataset: PwC
+[11/04/2024 21:44:07] {compress.py:86} INFO - > Start compressing data/PwC/PwC_test_fid_unique_context.json
+[11/04/2024 21:44:07] {compress.py:87} INFO - > Token score path: token_scores/PwC/token_scores_list_PwC_test_unique_ours_base.pkl
+[11/04/2024 21:44:07] {compress.py:88} INFO - > Original avg_len: 393.33
+[11/04/2024 21:44:07] {compress.py:89} INFO - > Target comprrssion settings, target_length: 300
+[11/04/2024 21:44:07] {compress.py:93} INFO - > comp_ctx: True (0.8), comp_sent: True (0.2), comp_tok: False
+[11/04/2024 21:44:07] {compress.py:123} INFO - > coarse_target_length: 300.00, total_coarse_remove_tokens: 70.00
+[11/04/2024 21:48:56] {compress.py:69} INFO - > n_contexts: None, pattern_str: context:
+[11/04/2024 21:48:56] {compress.py:76} INFO - > Original avg_len: PwC 393.33
+[11/04/2024 21:48:56] {compress.py:84} INFO - ###############################################
+[11/04/2024 21:48:56] {compress.py:85} INFO - > Dataset: PwC
+[11/04/2024 21:48:56] {compress.py:86} INFO - > Start compressing data/PwC/PwC_test_fid_unique_context.json
+[11/04/2024 21:48:56] {compress.py:87} INFO - > Token score path: token_scores/PwC/token_scores_list_PwC_test_unique_ours_base.pkl
+[11/04/2024 21:48:56] {compress.py:88} INFO - > Original avg_len: 393.33
+[11/04/2024 21:48:56] {compress.py:89} INFO - > Target comprrssion settings, target_length: 300
+[11/04/2024 21:48:56] {compress.py:93} INFO - > comp_ctx: True (0.8), comp_sent: True (0.2), comp_tok: False
+[11/04/2024 21:48:56] {compress.py:123} INFO - > coarse_target_length: 300.00, total_coarse_remove_tokens: 70.00
+[11/04/2024 21:49:17] {compress.py:69} INFO - > n_contexts: None, pattern_str: context:
+[11/04/2024 21:49:17] {compress.py:76} INFO - > Original avg_len: PwC 393.33
+[11/04/2024 21:49:17] {compress.py:84} INFO - ###############################################
+[11/04/2024 21:49:17] {compress.py:85} INFO - > Dataset: PwC
+[11/04/2024 21:49:17] {compress.py:86} INFO - > Start compressing data/PwC/PwC_test_fid_unique_context.json
+[11/04/2024 21:49:17] {compress.py:87} INFO - > Token score path: token_scores/PwC/token_scores_list_PwC_test_unique_ours_base.pkl
+[11/04/2024 21:49:17] {compress.py:88} INFO - > Original avg_len: 393.33
+[11/04/2024 21:49:17] {compress.py:89} INFO - > Target comprrssion settings, target_length: 300
+[11/04/2024 21:49:17] {compress.py:93} INFO - > comp_ctx: True (0.8), comp_sent: True (0.2), comp_tok: False
+[11/04/2024 21:49:17] {compress.py:123} INFO - > coarse_target_length: 300.00, total_coarse_remove_tokens: 70.00
+[11/04/2024 22:00:02] {compress.py:69} INFO - > n_contexts: None, pattern_str: context:
+[11/04/2024 22:00:02] {compress.py:76} INFO - > Original avg_len: PwC 393.33
+[11/04/2024 22:00:02] {compress.py:84} INFO - ###############################################
+[11/04/2024 22:00:02] {compress.py:85} INFO - > Dataset: PwC
+[11/04/2024 22:00:02] {compress.py:86} INFO - > Start compressing data/PwC/PwC_test_fid_unique_context.json
+[11/04/2024 22:00:02] {compress.py:87} INFO - > Token score path: token_scores/PwC/token_scores_list_PwC_test_unique_ours_base.pkl
+[11/04/2024 22:00:02] {compress.py:88} INFO - > Original avg_len: 393.33
+[11/04/2024 22:00:02] {compress.py:89} INFO - > Target comprrssion settings, target_length: 300
+[11/04/2024 22:00:02] {compress.py:93} INFO - > comp_ctx: True (0.8), comp_sent: True (0.2), comp_tok: False
+[11/04/2024 22:00:02] {compress.py:123} INFO - > coarse_target_length: 300.00, total_coarse_remove_tokens: 70.00
+[11/04/2024 22:05:06] {compress.py:69} INFO - > n_contexts: None, pattern_str: context:
+[11/04/2024 22:05:07] {compress.py:76} INFO - > Original avg_len: PwC 489.28
+[11/04/2024 22:05:07] {compress.py:84} INFO - ###############################################
+[11/04/2024 22:05:07] {compress.py:85} INFO - > Dataset: PwC
+[11/04/2024 22:05:07] {compress.py:86} INFO - > Start compressing data/PwC/PwC_test_fid_unique_context.json
+[11/04/2024 22:05:07] {compress.py:87} INFO - > Token score path: token_scores/PwC/token_scores_list_PwC_test_unique_ours_base.pkl
+[11/04/2024 22:05:07] {compress.py:88} INFO - > Original avg_len: 489.28
+[11/04/2024 22:05:07] {compress.py:89} INFO - > Target comprrssion settings, target_length: 300
+[11/04/2024 22:05:07] {compress.py:93} INFO - > comp_ctx: True (0.8), comp_sent: True (0.2), comp_tok: False
+[11/04/2024 22:05:07] {compress.py:123} INFO - > coarse_target_length: 300.00, total_coarse_remove_tokens: 161.00
+[11/04/2024 22:05:13] {compress.py:284} INFO - Done compressing. time taken: 5.90s
+[11/04/2024 22:05:13] {compress.py:304} INFO - > Original avg_len: 489.28 comp_ctx(0.8): 385.44 comp_sent(0.2): 281.04 (target_length: 300)
+[11/04/2024 22:05:13] {compress.py:320} INFO - > Saving compressed data to data_compressed/PwC/PwC/PwC_test_fid_unique_context_fid_300_ctxTrue_sortFalse_sentTrue0.2_1_tokFalse0.jsonl.gz
+[11/04/2024 22:05:13] {compress.py:395} INFO - ###################################################
+[11/04/2024 22:06:26] {compress.py:69} INFO - > n_contexts: None, pattern_str: context:
+[11/04/2024 22:06:31] {compress.py:76} INFO - > Original avg_len: PwC 461.56
+[11/04/2024 22:06:31] {compress.py:84} INFO - ###############################################
+[11/04/2024 22:06:31] {compress.py:85} INFO - > Dataset: PwC
+[11/04/2024 22:06:31] {compress.py:86} INFO - > Start compressing data/PwC/PwC_train_fid_unique_context.json
+[11/04/2024 22:06:31] {compress.py:87} INFO - > Token score path: token_scores/PwC/token_scores_list_PwC_train_unique_ours_base.pkl
+[11/04/2024 22:06:31] {compress.py:88} INFO - > Original avg_len: 461.56
+[11/04/2024 22:06:31] {compress.py:89} INFO - > Target comprrssion settings, target_length: 300
+[11/04/2024 22:06:31] {compress.py:93} INFO - > comp_ctx: True (0.8), comp_sent: True (0.2), comp_tok: False
+[11/04/2024 22:06:31] {compress.py:123} INFO - > coarse_target_length: 300.00, total_coarse_remove_tokens: 237.00
+[11/04/2024 22:07:52] {compress.py:283} INFO - Done compressing. time taken: 81.53s
+[11/04/2024 22:07:52] {compress.py:303} INFO - > Original avg_len: 461.56 comp_ctx(0.8): 386.49 comp_sent(0.2): 281.96 (target_length: 300)
+[11/04/2024 22:07:52] {compress.py:319} INFO - > Saving compressed data to data_compressed/PwC/PwC_train_fid_unique_context_fid_300_ctxTrue_sortFalse_sentTrue0.2_1_tokFalse0.jsonl.gz
+[11/04/2024 22:07:53] {compress.py:394} INFO - ###################################################
+[11/04/2024 22:29:33] {compress.py:69} INFO - > n_contexts: None, pattern_str: context:
+[11/04/2024 22:29:34] {compress.py:76} INFO - > Original avg_len: PwC 489.28
+[11/04/2024 22:29:34] {compress.py:84} INFO - ###############################################
+[11/04/2024 22:29:34] {compress.py:85} INFO - > Dataset: PwC
+[11/04/2024 22:29:34] {compress.py:86} INFO - > Start compressing data/PwC/PwC_test_fid_unique_context.json
+[11/04/2024 22:29:34] {compress.py:87} INFO - > Token score path: token_scores/PwC/token_scores_list_PwC_test_unique_ours_base.pkl
+[11/04/2024 22:29:34] {compress.py:88} INFO - > Original avg_len: 489.28
+[11/04/2024 22:29:34] {compress.py:89} INFO - > Target comprrssion settings, target_length: 300
+[11/04/2024 22:29:34] {compress.py:93} INFO - > comp_ctx: True (0.8), comp_sent: True (0.2), comp_tok: False
+[11/04/2024 22:29:34] {compress.py:123} INFO - > coarse_target_length: 300.00, total_coarse_remove_tokens: 161.00
+[11/04/2024 22:29:40] {compress.py:283} INFO - Done compressing. time taken: 5.90s
+[11/04/2024 22:29:40] {compress.py:303} INFO - > Original avg_len: 489.28 comp_ctx(0.8): 385.44 comp_sent(0.2): 281.04 (target_length: 300)
+[11/04/2024 22:29:40] {compress.py:319} INFO - > Saving compressed data to data_compressed/PwC/PwC_test_fid_unique_context_fid_300_ctxTrue_sortFalse_sentTrue0.2_1_tokFalse0.jsonl.gz
+[11/04/2024 22:29:40] {compress.py:394} INFO - ###################################################

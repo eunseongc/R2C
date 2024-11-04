@@ -6,28 +6,9 @@ from collections import Counter
 from nltk import sent_tokenize
 from IPython import embed
 
-INSTRUCTION = "Write a high-quality answer for the given question using only the provided search results (some of which might be irrelevant)."
-QUESTION_TEMPLATE = "Question: {}\nAnswer:"
+INSTRUCTION = "Write a high-quality answer for the given question using only the provided search results (some of which might be irrelevant)." # For NQ (lost-in-the-middle)
+QUESTION_TEMPLATE = "Question: {}\nAnswer:" # For NQ (lost-in-the-middle)
 GPT_TOKENIZER = tiktoken.encoding_for_model("gpt-3.5-turbo")
-
-_dict = {
-    "narrativeqa": "{compressed_prompt}\n\n{question}",
-    "qasper": "{compressed_prompt}\n\n {question}",
-    "multifieldqa_en": "\n\n{compressed_prompt}\n\n{question}",
-    "hotpotqa": "{compressed_prompt}\n\n{question}",
-    "2wikimqa": "{compressed_prompt}\n\n{question}",
-    "musique": "{compressed_prompt}\n\n{question}",
-    "gov_report": "{compressed_prompt}\n\n{question}",
-    "qmsum": "{compressed_prompt}\n\n{question}",
-    "multi_news": "{compressed_prompt}\n\n{question}",
-    "trec": "{compressed_prompt}\n{question}",
-    "triviaqa": "{compressed_prompt}\n\n{question}",
-    "samsum": "{compressed_prompt}\n\n{question}",
-    "passage_count": "{compressed_prompt}\n\n{question}",
-    "passage_retrieval_en": "{compressed_prompt}\n\n{question}",
-    "lcc": "{compressed_prompt}{question}",
-    "repobench-p": "{compressed_prompt}{question}"
-}
 
 _dict_wo_instruction = {
     "narrativeqa": "{compressed_prompt}\n\nNow, answer the question based on the story asconcisely as you can, using a single phrase if possible. Do not provide any explanation.\n\nQuestion: {question}",
@@ -67,7 +48,7 @@ def get_prompt(ctxs, qas, dataset, use_org_idx=True, use_dict=True):
     if 'longbench' in dataset:
         dataname = '_'.join(dataset.split('_')[1:])
         cur_ctx_id = 0
-        for ctx in ctxs[1:]:
+        for ctx in ctxs:
             if prompt == "":
                 prompt = ctx['text']
                 continue
@@ -91,7 +72,7 @@ def get_prompt(ctxs, qas, dataset, use_org_idx=True, use_dict=True):
 
     else:
         cur_ctx_id = 0
-        for ctx in ctxs[1:]:
+        for ctx in ctxs:
             if prompt == "":
                 prompt = ctx['text']
                 continue
@@ -202,18 +183,21 @@ def compress_contexts(args, batch_scores, batch_token_ids, tokenizer, ctxs, ctx_
     ctx_indices = []
     len_total = len(GPT_TOKENIZER.encode(get_prompt([], {'question': question}, args.dataset, use_org_idx=args.use_org_idx)))
 
-
     for idx in ctx_indices_sorted:
         if 'longbench' in args.dataset:
             # Chunk only option
             if not args.comp_tok and not args.comp_sent and abs(len_total - ctx_comp_len) < abs(len_total + len(GPT_TOKENIZER.encode(f"{ctxs[idx]['text']}")) - ctx_comp_len):
                 break
             len_total += len(GPT_TOKENIZER.encode(ctxs[idx]['text']))
-        else:
+        elif 'nq' in args.dataset:
             # Chunk only option
             if not args.comp_tok and not args.comp_sent and abs(len_total - ctx_comp_len) < abs(len_total + len(GPT_TOKENIZER.encode(f"Document [{idx}](Title: {ctxs[idx]['title']}) {ctxs[idx]['text']}")) - ctx_comp_len):
                 break
             len_total += len(GPT_TOKENIZER.encode(f"Document [{idx}](Title: {ctxs[idx]['title']}) {ctxs[idx]['text']}"))
+        else:
+            if not args.comp_tok and not args.comp_sent and abs(len_total - ctx_comp_len) < abs(len_total + len(GPT_TOKENIZER.encode(f"{ctxs[idx]['text']}")) - ctx_comp_len):
+                break
+            len_total += len(GPT_TOKENIZER.encode(ctxs[idx]['text']))
 
         ctx_indices.append(idx)
         if len_total >= ctx_comp_len:

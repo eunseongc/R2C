@@ -95,17 +95,15 @@ def main(args, logger):
     all_len_change_tracker = []
     start_time = time()
     log = open('log_compress_time_measure.txt', 'a')
-    s = 0
-    cnt = 0
     for qas_i, qas in enumerate(tqdm(test_data, dynamic_ncols=True)):
-        len_change_tracker = []
+        len_change_tracker = [len(chatgpt_tok.encode(get_prompt(qas['ctxs'][:args.n_contexts], qas, args.dataset, args.use_org_idx)))]
         ctxs = qas['ctxs'][:args.n_contexts]
         question = qas['question']
         if qas.get('all_classes') is not None:
             force_tokens = qas['all_classes']
         else:
             force_tokens = None
-        
+
         qas['ctxs'] = ctxs
         org_prompt = get_prompt(ctxs, qas, args.dataset, args.use_org_idx)
         len_org_prompt = len(chatgpt_tok.encode(org_prompt))
@@ -206,7 +204,6 @@ def main(args, logger):
                 compressed_prompt = get_prompt(ctxs, qas, args.dataset, args.use_org_idx)
                 len_after_ctx_comp = len(chatgpt_tok.encode(compressed_prompt))
                 len_change_tracker.append(len_after_ctx_comp)
-
             elif args.do_sort_ctx:
                 titles = [ctx['title'] for ctx in ctxs]
                 ctx_scores = get_ctx_scores(batch_scores, args.ctx_score_mode, args.question_mode, args.include_end_token, scorer_tokenizer, question, titles, pattern_str)
@@ -289,7 +286,7 @@ def main(args, logger):
     ### logging len_change_tracker
     all_len_change_tracker = np.array(all_len_change_tracker)
     tracking_log_text = f"> Original avg_len: {org_avg_len:.2f} "
-    index, fields = 0, []
+    index, fields = 1, []
     if args.comp_ctx:
         fields.append(f"comp_ctx({1 - args.sent_comp_ratio}): {all_len_change_tracker[:, index].mean():.2f}")
         index += 1
@@ -310,8 +307,11 @@ def main(args, logger):
 
     if 'longbench' in args.dataset: ## args.dataset == 'longbench_samsum' or 'dpr_nq_20' / args.output_root == 'compressed_qa_data/0423'
         output_path = os.path.join(f"{args.output_root}", f"{args.dataset}_{output_file_name}.json")
-    else:            
+    elif 'nq' in args.dataset:
         output_path = os.path.join(args.output_root, f"{args.dataset}_{args.n_contexts}", f"{output_file_name}.jsonl.gz")
+    else:
+        file_name = args.input_path.split('/')[-1].split('.')[0]
+        output_path = os.path.join(args.output_root, f"{args.dataset}", f"{file_name}_{output_file_name}.jsonl.gz")
 
     if not os.path.exists(os.path.dirname(output_path)):
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -330,7 +330,7 @@ if __name__ == "__main__":
                         help="A path of json or jsonl file containing a list of qas") ## e.g., "qa_data/test_20.json"
     parser.add_argument('--output_root', type=str, default="compressed_qa_data")
     parser.add_argument('--dataset', type=str, default="dpr_nq_20") ## e.g., dpr_20, 20_gold_at_0
-    parser.add_argument('--n_contexts', type=int, default=20)
+    parser.add_argument('--n_contexts', type=int, default=None)
     parser.add_argument('--use_token_scores', action='store_true', default=False,
                         help="Whether to use token_scores_list predicted in advance")
     parser.add_argument('--token_scores_path', type=str, default="qa_data/test_sent_20_192_nltk.json", required=False,
