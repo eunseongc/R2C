@@ -142,3 +142,5 @@ llama3_need_ctx_testoracle 1.97s
 llama3_need_ctx_testoracle 2.32s
 llama3_need_ctx_testoracle 2.35s
 llama3_need_ctx_testoracle 2.05s
+PwC 6.45s
+PwC 1.80s

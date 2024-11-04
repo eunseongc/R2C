@@ -239,12 +239,11 @@ if __name__ == "__main__":
     model = model.to(opt.device)
     
     logger.info("Start eval")
-    exactmatch, total, recall_dict, preds = evaluate(model, eval_dataset, eval_dataloader, tokenizer, opt)
+    exactmatch, total, preds = evaluate(model, eval_dataset, eval_dataloader, tokenizer, opt)
 
     logger.info(f'EM {100*exactmatch:.2f}, Total number of example {total}')
 
     evaluation_table = ResultTable(table_name='Eval Result', header=list(preds.keys()))
-    evaluation_table.add_row('orig.', recall_dict)
     evaluation_table.add_row('pred.', preds)
 
     logger.info(evaluation_table.to_string())

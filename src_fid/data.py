@@ -22,8 +22,6 @@ class Dataset(torch.utils.data.Dataset):
         self.data = data
         self.mode = opt.mode
         self.n_contexts = opt.n_contexts
-        self.sce_n_contexts = opt.sce_n_contexts
-        self.ctx_anno = opt.ctx_anno ## "has_answer, mytho"
         self.question_prefix = question_prefix
         self.title_prefix = title_prefix
         self.passage_prefix = passage_prefix
@@ -47,17 +45,17 @@ class Dataset(torch.utils.data.Dataset):
     def __getitem__(self, index):
         example = self.data[index]
         
-        ex_question = example['question']
-        ex_question_tokens = self.t5_tok.tokenize(ex_question)
-        if len(ex_question_tokens) > 100:
-            print(f">> Long question: {example['id']} >> {len(ex_question_tokens)}")
-            ex_question = self.t5_tok.convert_tokens_to_string(ex_question_tokens[-100:])
+        ex_question = ""
+        # ex_question = example['question']
+        # ex_question_tokens = self.t5_tok.tokenize(ex_question)
+        # if len(ex_question_tokens) > 100:
+        #     print(f">> Long question: {example['id']} >> {len(ex_question_tokens)}")
+        #     ex_question = self.t5_tok.convert_tokens_to_string(ex_question_tokens[-100:])
 
-        task = example.get('task')
         question = self.question_prefix + " " + ex_question
 
+        task = example.get('task')
         target = self.get_target(example)
-
         if 'ctxs' in example and self.n_contexts is not None:
             text_format_passage = self.passage_prefix + " {}"
             text_format_title_passage = self.title_prefix + " {} " + self.passage_prefix + " {}"
@@ -81,9 +79,7 @@ class Dataset(torch.utils.data.Dataset):
                 else:
                     if self.is_eval:
                         has_answer = c['has_answer'] if c['has_answer'] is not None else 0
-                    else:
-                        has_answer = c[self.ctx_anno]
-                
+
                 has_answers.append(has_answer)                    
                 input_ids_.append(c.get('input_ids'))
 

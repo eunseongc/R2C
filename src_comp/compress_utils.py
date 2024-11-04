@@ -63,39 +63,46 @@ def find_pattern_locations(batch_token_ids, patterns):
     return locations
 
 def get_prompt(ctxs, qas, dataset, use_org_idx=True, use_dict=True):
+    prompt = ""
     if 'longbench' in dataset:
         dataname = '_'.join(dataset.split('_')[1:])
-        
-        prompt = ""
         cur_ctx_id = 0
-        for ctx in ctxs:
+        for ctx in ctxs[1:]:
+            if prompt == "":
+                prompt = ctx['text']
+                continue
             if ctx['id'].split('-')[0] == cur_ctx_id:
-                if prompt == "":
-                    prompt = ctx['text']
-                else:
-                    prompt = prompt + " " + ctx['text']
+                prompt = prompt + " " + ctx['text']
             else:
-                if prompt == "":
-                    prompt = ctx['text']
-                else:
-                    prompt = prompt + '\n' + ctx['text']
+                prompt = prompt + '\n' + ctx['text']
                 cur_ctx_id = ctx['id'].split('-')[0]
-        # prompt = _dict[dataname].format(compressed_prompt=prompt, question=qas['question'])
+
         if use_dict:
             prompt = _dict_wo_instruction[dataname].format(compressed_prompt=prompt, question=qas['question'])
         else:
             prompt = prompt
-        # prompt = prompt.strip('\n') + "\n\n" + qas['question']
-        # prompt = "\n".join([ctx['text'] for ctx in ctxs] + [qas['question']])
-    else:
+
+    elif 'nq' in dataset:
         ctxs_formatted = []
         for c_i, ctx in enumerate(ctxs):
             idx = ctx['org_idx'] if use_org_idx else c_i + 1
             ctxs_formatted.append(f"Document [{idx}](Title: {ctx['title']}) {ctx['text']}")
         prompt = INSTRUCTION + '\n\n' + '\n'.join(ctxs_formatted) + '\n\n' + QUESTION_TEMPLATE.format(qas['question'])
 
-    return prompt
+    else:
+        cur_ctx_id = 0
+        for ctx in ctxs[1:]:
+            if prompt == "":
+                prompt = ctx['text']
+                continue
+            if ctx['id'].split('-')[0] == cur_ctx_id:
+                prompt = prompt + " " + ctx['text']
+            else:
+                prompt = prompt + '\n' + ctx['text']
+                cur_ctx_id = ctx['id'].split('-')[0]
+        prompt = prompt
 
+    return prompt
 
 
 def gini(x):
@@ -180,7 +187,7 @@ def get_ctx_scores(batch_scores, mode: str, question_mode: str, include_end_toke
     return ctx_scores
 
 
-def compress_contexts(args, batch_scores, batch_token_ids, tokenizer, ctxs, ctx_comp_len: int, ctx_score_cumsum, question, pattern_str):
+def compress_contexts(args, batch_scores, batch_token_ids, tokenizer, ctxs, ctx_comp_len: int, question, pattern_str):
     ############################################
     ### Context compression using FiD score ###
     ############################################
@@ -195,34 +202,22 @@ def compress_contexts(args, batch_scores, batch_token_ids, tokenizer, ctxs, ctx_
     ctx_indices = []
     len_total = len(GPT_TOKENIZER.encode(get_prompt([], {'question': question}, args.dataset, use_org_idx=args.use_org_idx)))
 
-    if ctx_score_cumsum is not None:
-        ## By score percentile
-        ctx_scores = ctx_scores/np.sum(ctx_scores)
-        ### THIS IS WHAT DIFFERENCE FROM THE 0530 VERSION
-        # cum_ctx_index = np.where(ctx_scores[ctx_scores.argsort()[::-1]].cumsum() >= ctx_score_cumsum)[0][0] + 1
-        #####
-        cum_ctx_index = np.where(ctx_scores[ctx_scores.argsort()[::-1]].cumsum() > ctx_score_cumsum)[0][0]
-        if cum_ctx_index == 0:
-            cum_ctx_index = 1
-        #####
-        ctx_indices = np.argsort(ctx_scores)[::-1][:cum_ctx_index].tolist()
-    else:
-        for idx in ctx_indices_sorted:
-            if 'longbench' in args.dataset:
-                # Chunk only option
-                if not args.comp_tok and not args.comp_sent and abs(len_total - ctx_comp_len) < abs(len_total + len(GPT_TOKENIZER.encode(f"{ctxs[idx]['text']}")) - ctx_comp_len):
-                    break
-                len_total += len(GPT_TOKENIZER.encode(ctxs[idx]['text']))
-            else:
-                # Chunk only option
-                if not args.comp_tok and not args.comp_sent and abs(len_total - ctx_comp_len) < abs(len_total + len(GPT_TOKENIZER.encode(f"Document [{idx}](Title: {ctxs[idx]['title']}) {ctxs[idx]['text']}")) - ctx_comp_len):
-                    break
-                len_total += len(GPT_TOKENIZER.encode(f"Document [{idx}](Title: {ctxs[idx]['title']}) {ctxs[idx]['text']}"))
 
-            ctx_indices.append(idx)
-            if len_total >= ctx_comp_len:
+    for idx in ctx_indices_sorted:
+        if 'longbench' in args.dataset:
+            # Chunk only option
+            if not args.comp_tok and not args.comp_sent and abs(len_total - ctx_comp_len) < abs(len_total + len(GPT_TOKENIZER.encode(f"{ctxs[idx]['text']}")) - ctx_comp_len):
                 break
-        
+            len_total += len(GPT_TOKENIZER.encode(ctxs[idx]['text']))
+        else:
+            # Chunk only option
+            if not args.comp_tok and not args.comp_sent and abs(len_total - ctx_comp_len) < abs(len_total + len(GPT_TOKENIZER.encode(f"Document [{idx}](Title: {ctxs[idx]['title']}) {ctxs[idx]['text']}")) - ctx_comp_len):
+                break
+            len_total += len(GPT_TOKENIZER.encode(f"Document [{idx}](Title: {ctxs[idx]['title']}) {ctxs[idx]['text']}"))
+
+        ctx_indices.append(idx)
+        if len_total >= ctx_comp_len:
+            break
 
     for idx in ctx_indices:
         ctxs[idx]['ctx_score'] = ctx_scores[idx]
@@ -287,8 +282,7 @@ def compress_sentences(args, batch_scores, batch_token_ids, tokenizer, ctxs, ctx
         try:
             sent_len_list = [len(tokens_sent) for tokens_sent in tokenizer.batch_encode_plus(sents, add_special_tokens=False)['input_ids']]
         except:
-            print(22222222222222222222222)
-            embed()
+            print("Error in sentence tokenization")
 
         cum_len_list = [sum(sent_len_list[:i+1]) for i in range(len(sent_len_list))]
         start_idx = 0
@@ -361,10 +355,11 @@ def compress_sentences(args, batch_scores, batch_token_ids, tokenizer, ctxs, ctx
         sents = sents_list[i]
         
         if len(sent_mean_score_ctx) == 0:
-            print("No sentence in the context, tokenizer cannot handle this case")
+            print("> No sentence in the context, tokenizer cannot handle this case, skip this context and append to removal_indices. Possibly due to foreign language.")
             ctx_removal_indices.append(i)
             # embed()
             continue
+        
         rest_sents = None
         if len(sent_mean_score_ctx) != len(sents):
             ## When the length of the question + context was longer than the max length of the FiD, this can happen
@@ -388,16 +383,14 @@ def compress_sentences(args, batch_scores, batch_token_ids, tokenizer, ctxs, ctx
                 cur_sent_len = len(GPT_TOKENIZER.encode(split_token_ctxs[i][sent_index] + sents[sent_index]))
                 cur_comp_len += cur_sent_len
                 total_comp_len += cur_sent_len
-                if total_comp_len >= sent_comp_len:
+                if total_comp_len >= sent_comp_len or cur_comp_len >= comp_len:
+                    break
                     ## Check if the last sentence is needed
                     # compare with previous total comp len, and if the difference is smaller, restore the last sentence
                     # if np.abs(total_comp_len - cur_sent_len - sent_comp_len) < np.abs(total_comp_len - sent_comp_len):
                     #     r = r - 1
                     #     total_comp_len -= cur_sent_len
                     #     cur_comp_len -= cur_sent_len
-                    break
-                elif cur_comp_len >= comp_len:
-                    break
             r = r + 1 ## sents from r+1 will be appended
             ######################################################
             
@@ -457,34 +450,10 @@ def compress_sentences(args, batch_scores, batch_token_ids, tokenizer, ctxs, ctx
     new_scores_ctxs = [new_scores_ctxs[ctx['org_idx']-1] for ctx in ctxs]
     new_token_ids_ctxs = [new_token_ids_ctxs[ctx['org_idx']-1] for ctx in ctxs]
 
-
-    # grad_comp_ratio_sent = np.linspace(sent_low, sent_high, len(ctxs ))[::-1]
-    ## Using percentile
-    # for ctx_i, (sent_mean_score_ctx, comp_ratio) in enumerate(zip(sent_mean_score_ctxs, grad_comp_ratio_sent)):
-    #     ## Select sent based on sent_mean_score_ctx up to comp_ratio (stop if over comp_ratio)
-    #     sent_indices_selected = []
-    #     cum_score = 0
-    #     sent_mean_score_ctx_norm_sorted = np.sort(sent_mean_score_ctx/sent_mean_score_ctx.sum())[::-1]
-    #     indices_sorted = np.argsort(sent_mean_score_ctx)[::-1]
-    #     for idx, sent_score in enumerate(sent_mean_score_ctx_norm_sorted):
-    #         cum_score += sent_score
-    #         sent_indices_selected.append(indices_sorted[idx])
-    #         if cum_score > comp_ratio:
-    #             break
-    #     sent_indices_selected = np.sort(sent_indices_selected)
-    #     sent_comp_text = ""
-    #     for i in sent_indices_selected:
-    #         sent_comp_text += split_token_ctxs[ctx_i][i] + sents_list[ctx_i][i]
-    #     # sent_comp_text = ' '.join([sents_list[ctx_i][i] for i in sent_indices_selected])
-    #     ctxs[ctx_i]['text'] = sent_comp_text
-
-    #     new_scores_ctx = np.concatenate([sent_token_ids_ctxs[ctx_i][i] for i in sent_indices_selected])
-    #     new_scores_ctxs.append(new_scores_ctx)
-    #     new_token_ids_ctx = np.concatenate([sent_token_ids_ctxs[ctx_i][i] for i in sent_indices_selected])
-    #     new_token_ids_ctxs.append(new_token_ids_ctx)
     return new_scores_ctxs, new_token_ids_ctxs, ctxs
 
 
+## Not used
 def compress_tokens(args, batch_scores, batch_token_ids, ctxs, tok_lamb, adaptive_token_comp, tokenizer, question, force_tokens=None, true_target=None):
     ############################################
     ### 3. Token compression using FiD score ###

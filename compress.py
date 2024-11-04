@@ -14,7 +14,6 @@ from copy import deepcopy
 from tqdm import tqdm
 from src_comp.compress_utils import *
 from transformers import T5TokenizerFast, AutoTokenizer
-from IPython import embed
 
 
 def calculate_entropy(probabilities):
@@ -22,8 +21,8 @@ def calculate_entropy(probabilities):
 
 def main(args, logger):
     chatgpt_tok = tiktoken.encoding_for_model("gpt-3.5-turbo")
-    # scorer_tokenizer = T5TokenizerFast.from_pretrained('t5-base')
-    scorer_tokenizer = AutoTokenizer.from_pretrained('mistralai/Mistral-7B-Instruct-v0.2', use_fast=False)
+    scorer_tokenizer = T5TokenizerFast.from_pretrained('t5-base')
+    # scorer_tokenizer = AutoTokenizer.from_pretrained('mistralai/Mistral-7B-Instruct-v0.2', use_fast=False)
 
     #################################### Loading input dataset
     if args.input_path.endswith('.jsonl'):
@@ -62,8 +61,11 @@ def main(args, logger):
         args.n_contexts = None
         pattern_str = 'context:'
         logger.info(f"> As the dataset is longbench, n_contexts is set to None and pattern_str is set to {pattern_str}")
-    else:
+    elif 'nq' in args.dataset:
         pattern_str = 'title:'
+        logger.info(f"> Compressing Natural Questions, n_contexts: {args.n_contexts}, pattern_str: {pattern_str}")
+    else:
+        pattern_str = 'context:'
         logger.info(f"> n_contexts: {args.n_contexts}, pattern_str: {pattern_str}")
 
     prompt_len_list_org = []
@@ -73,21 +75,10 @@ def main(args, logger):
     org_avg_len = np.mean(prompt_len_list_org)
     logger.info(f"> Original avg_len: {args.dataset} {org_avg_len:.2f}")
 
-    # if not args.comp_ctx: args.ctx_score_cumsum = 1.0
-
-    # if args.ctx_score_cumsum == 1.0 and not args.use_gini: args.comp_ctx = False
-    # if args.sent_low == 1.0 and args.sent_high == 1.0 and not args.use_gini: args.comp_sent = False
-    if not args.comp_tok or args.e_tok == 0:
-        args.comp_tok = False
-        args.comp_tok = False
-
-    if args.sent_comp_ratio == 1:
-        args.comp_ctx = False
+    if not args.comp_tok or args.e_tok == 0: args.comp_tok = False
+    if args.sent_comp_ratio == 1: args.comp_ctx = False
     if not args.comp_sent or args.sent_comp_ratio == 0:
         args.comp_sent = False
-        args.sent_comp_ratio = 0
-
-    if args.ctx_score_cumsum is not None:
         args.sent_comp_ratio = 0
 
     logger.info("###############################################")
@@ -99,7 +90,7 @@ def main(args, logger):
 
     if args.use_gini:
         args.sent_comp_ratio = f"gini_{args.ctx_gini_standard}_{args.raw_for_high_gini}_{args.raw_for_low_gini}"
-    logger.info(f"> comp_ctx: {args.comp_ctx} ({args.ctx_score_cumsum}), comp_sent: {args.comp_sent} ({args.sent_comp_ratio}), comp_tok: {args.comp_tok}")
+    logger.info(f"> comp_ctx: {args.comp_ctx} ({1 - args.sent_comp_ratio}), comp_sent: {args.comp_sent} ({args.sent_comp_ratio}), comp_tok: {args.comp_tok}")
     ### Start compressing
     all_len_change_tracker = []
     start_time = time()
@@ -120,9 +111,11 @@ def main(args, logger):
         len_org_prompt = len(chatgpt_tok.encode(org_prompt))
         if 'longbench' in args.dataset:
             dummy_ctxs = []
-        else:
+        elif 'nq' in args.dataset:
             num_ctxs_estimate = int(len(ctxs) * (args.target_length / len_org_prompt))
             dummy_ctxs = [{'title': ctx['title'], 'text': "", 'org_idx': ctx['org_idx']} for ctx in ctxs[:num_ctxs_estimate + 1]]
+        else:
+            dummy_ctxs = []
         len_wo_ctxs = len(GPT_TOKENIZER.encode(get_prompt(dummy_ctxs, {'question': question}, args.dataset, use_org_idx=args.use_org_idx)))
         # coarse_target_length = (args.target_length - len_wo_ctxs) * 1/args.tok_lamb + len_wo_ctxs
         coarse_target_length = args.target_length + args.e_tok
@@ -196,20 +189,6 @@ def main(args, logger):
             else:
                 pass
             
-            ### If using gini index, set args.ctx_score_cumsum & args.sent_low
-            # 0.3 (0.2, 0.15), 0.6065 # mean: 0.2827376598950415
-            # if args.use_gini:
-            #     titles = [ctx['title'] for ctx in ctxs]
-            #     ctx_scores = get_ctx_scores(batch_scores, args.ctx_score_mode, args.question_mode, args.include_end_token, scorer_tokenizer, question, titles, pattern_str)
-            #     ## NORM 필요?
-            #     ctx_gini = gini(ctx_scores)
-            #     if ctx_gini >= args.ctx_gini_standard : ## High inequality --> high compression ratio for contexts
-            #         sent_comp_ratio = args.raw_for_high_gini
-            #     else:
-            #         sent_comp_ratio = args.raw_for_low_gini
-            # else:
-            #     sent_comp_ratio = args.sent_comp_ratio
-            
             ctx_indices_sorted = list(range(len(ctxs)))
             if args.comp_ctx:
                 ctx_comp_len = total_coarse_remove_tokens * (1 - args.sent_comp_ratio) # |E_C|
@@ -222,7 +201,6 @@ def main(args, logger):
                                                                                             scorer_tokenizer,
                                                                                             ctxs,
                                                                                             ctx_target_len,
-                                                                                            args.ctx_score_cumsum,
                                                                                             question,
                                                                                             pattern_str)
                 compressed_prompt = get_prompt(ctxs, qas, args.dataset, args.use_org_idx)
@@ -257,9 +235,6 @@ def main(args, logger):
                 len_after_sent_comp = len(chatgpt_tok.encode(compressed_prompt))
                 len_change_tracker.append(len_after_sent_comp)
 
-            # print('in compress.py')
-            # embed()
-            # print(f"{len_org_prompt} {len_change_tracker} / {len_after_ctx_comp} {len_after_sent_comp}")
             if args.comp_tok:
                 cur_len = len_after_sent_comp if args.comp_sent else len_after_ctx_comp ## cur_len = INSTRUCTION + QUESTION + CONTEXTS / tok_lamb only consider context
                 if 'longbench' in args.dataset:
@@ -316,7 +291,7 @@ def main(args, logger):
     tracking_log_text = f"> Original avg_len: {org_avg_len:.2f} "
     index, fields = 0, []
     if args.comp_ctx:
-        fields.append(f"comp_ctx({args.ctx_score_cumsum}): {all_len_change_tracker[:, index].mean():.2f}")
+        fields.append(f"comp_ctx({1 - args.sent_comp_ratio}): {all_len_change_tracker[:, index].mean():.2f}")
         index += 1
     if args.comp_sent:
         fields.append(f"comp_sent({args.sent_comp_ratio}): {all_len_change_tracker[:, index].mean():.2f}")
@@ -330,18 +305,8 @@ def main(args, logger):
     tracking_log_text += " ".join(fields)
     logger.info(tracking_log_text)
 
-    ### Save compressed data
-    # if args.use_gini:
-    #     output_file_name = f"fid_gini{args.ctx_gini_standard}_ctx{args.ctx_score_cumsum_gini_low}-{args.ctx_score_cumsum_gini_high}_sent{args.sent_low_gini_high}-{args.sent_low_gini_low}"
-    # else:
-    #     output_file_name = f"fid_ctx{args.comp_ctx}{args.ctx_score_cumsum}_sent{args.comp_sent}{args.sent_low}-{args.sent_high}_tok{args.comp_tok}{args.tok_lamb}"
-    if args.use_gini:
-        output_file_name = f"fid_{args.target_length}_gini{args.ctx_gini_standard}_{args.raw_for_high_gini}-{args.raw_for_low_gini}"
 
-    if args.ctx_score_cumsum is not None:
-        output_file_name = f"fid_{args.target_length}_ctx{args.comp_ctx}{args.ctx_score_cumsum}_sort{args.do_sort_ctx}_sent{args.comp_sent}_{args.pow}_tok{args.comp_tok}{args.e_tok}"
-    else:
-        output_file_name = f"fid_{args.target_length}_ctx{args.comp_ctx}_sort{args.do_sort_ctx}_sent{args.comp_sent}{args.sent_comp_ratio}_{args.pow}_tok{args.comp_tok}{args.e_tok}"
+    output_file_name = f"fid_{args.target_length}_ctx{args.comp_ctx}_sort{args.do_sort_ctx}_sent{args.comp_sent}{args.sent_comp_ratio}_{args.pow}_tok{args.comp_tok}{args.e_tok}"
 
     if 'longbench' in args.dataset: ## args.dataset == 'longbench_samsum' or 'dpr_nq_20' / args.output_root == 'compressed_qa_data/0423'
         output_path = os.path.join(f"{args.output_root}", f"{args.dataset}_{output_file_name}.json")
@@ -390,7 +355,6 @@ if __name__ == "__main__":
                         help="Whether to use original index for each context")
     parser.add_argument('--ctx_score_mode', type=str, default='mean', required=False,
                         help="Mode to calculate ctx score")
-    parser.add_argument('--ctx_score_cumsum', type=float, default=None, required=False)
 
     parser.add_argument('--include_end_token', action='store_true', default=False,
                         help="Whether to include end token in ctx score calculation")
