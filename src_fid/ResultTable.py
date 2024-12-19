@@ -68,9 +68,9 @@ class ResultTable:
                 # convert input dict to string
                 d = row_dict[h]
 
-                if isinstance(d, (int, np.integer)):
+                if isinstance(d, (int, np.int32, np.int64)):
                     d_str = self.int_formatter % d
-                elif isinstance(d, (float, np.float)):
+                elif isinstance(d, (float, np.float16, np.float32, np.float64)):
                     d_str = self.float_formatter % d
                 else:
                     d_str = str(d)
@@ -100,19 +100,6 @@ class ResultTable:
             # Left align
             s = row_values[i] + ' ' * diff
             value_str.append(s)
-
-        # for i, max_length in enumerate(self.max_len.values()):
-        #     length = len(row_values[i])
-        #     diff = max_length - length
-        #
-        #     # Center align
-        #     # left_space = diff // 2
-        #     # right_space = diff - left_space
-        #     # s = ' ' * left_space + row_values[i] + ' ' * right_space
-        #
-        #     # Left align
-        #     s = row_values[i] + ' ' * diff
-        #     value_str.append(s)
 
         return self.splitter + ' ' + (' %s ' % self.splitter).join(value_str) + ' ' + self.splitter
 

@@ -98,28 +98,6 @@ def split_line(line, tokenizer, max_length, args):
 
 def process_context(qas, tokenizer, max_textlength, args, title=None, has_answer=None):
 
-    ## By max textlength
-    # tokens = tokenizer.encode(qas['context'])
-    # ctxs = []
-    
-    # count_line_break = 0
-    # for ii in range(0, len(tokens), max_textlength):
-    #     text = tokenizer.decode(tokens[ii:ii+max_textlength])
-    #     if text.strip() != '':
-    #         ctxs.append({"id": f"{count_line_break}_{str(ii)}","title": title, "text": text, "has_answer": has_answer})
-
-    #     for t in text[::-1]:
-    #         if t == '\n':
-    #             count_line_break += 1
-    #         else:
-    #             break
-    # qas['ctxs'] = ctxs            
-
-    ## By sentence
-    # ctx_split_by_line --> {"demo": [demo_line_list]}
-    # e.g., {"demo0": [], "demo1": []}
-    # else: {"demo0": []} 이런식.
-
     demo2lines = {}
     if args.demoaware:
         if qas['dataset'] in ['narrativeqa', 'qasper', 'multifieldqa_en', 'gov_report', 'qmsum', 'lcc', 'repobench-p']:
@@ -219,38 +197,12 @@ def main(args):
     else:
         raise ValueError("Invalid tokenizer")
     
-    # datasets = ["narrativeqa", "qasper", "multifieldqa_en", \
-    #             "hotpotqa", "2wikimqa", "musique", \
-    #             "gov_report", "qmsum", "multi_news", \
-    #             "trec", "triviaqa", "samsum", \
-    #             "lcc", "repobench-p"]
+    datasets = ["narrativeqa", "qasper", "multifieldqa_en", \
+                "hotpotqa", "2wikimqa", "musique", \
+                "gov_report", "qmsum", "multi_news", \
+                "trec", "triviaqa", "samsum", \
+                "lcc", "repobench-p"]
     
-    datasets = ["abisee/cnn_dailymail"]
-    # datasets = ["samsum", \
-    #         "passage_count", "passage_retrieval_en", \
-    #         "lcc", "repobench-p"]
-    
-    # datasets = ["gov_report", "qmsum", "multi_news", \
-    #             "trec", "samsum"] ## group 1
-    # datasets = ["multi_news", \
-    #             "trec", "samsum"] ## group 1 subset
-    # datasets = ["repobench-p"]
-
-    # task2datanames = {"singleqa": ["narrativeqa", "qasper", "multifieldqa_en"], \
-    #                 "multiqa": ["hotpotqa", "2wikimqa", "musique"], \
-    #                 "summarization": ["gov_report", "qmsum", "multi_news"], \
-    #                 "fewshot": ["trec", "triviaqa", "samsum"], \
-    #                 "synthetic": ["passage_count", "passage_retrieval_en"], \
-    #                 "code": ["lcc", "repobench-p"]}
-    
-    ## Original lengths
-    # for task, datanames in task2datanames.items():
-    #     for dataname in datanames:
-    #         data = load_dataset('THUDM/LongBench', dataname, split='test')
-    #         len_list = []
-    #         for qas in data:
-    #             len_list.append(len(tok_gpt.encode(qas['context'] + " " + qas['input'])))
-    #         print(f"[{task}] {dataname}: {np.mean(len_list):.3f}")
     log = open('log_preprocessing.txt', 'a')
     total_time = 0
     for dataname in datasets:
@@ -264,31 +216,17 @@ def main(args):
         t = time()
         for d_i, d in enumerate(tqdm(data, desc=dataname)):
             qas = {}
-            if dataname == 'abisee/cnn_dailymail':
-                qas['context'] = d['article']
-                qas['question'] = "Now, write a one-page summary of the report."
-                qas['answers'] = [d['highlights']]
+            if args.use_dic:
+                qas['question'] = _dic[dataname].format(input=d['input'])
             else:
-                if args.use_dic:
-                    qas['question'] = _dic[dataname].format(input=d['input'])
-                else:
-                    qas['question'] = d['input']
-                # if d['input'] == '':
-                #     if dataname == 'lcc':
-                #         qas['question'] = '\n'.join(d['context'].split('\n')[-3:])
-                #     else:
-                #         if args.use_default_question == True:
-                #             qas['question'] = dataname2defaultquestion[dataname]
-                #         else:
-                #             qas['question'] = d['input']
-                # else:
-                #     qas['question'] = d['input']
-                qas['context'] = d['context']
-                qas['answers'] = d['answers']
-                qas['length'] = d['length']
-                qas['dataset'] = d['dataset']
-                qas['all_classes'] = d['all_classes']
-                qas['_id'] = d['_id']
+                qas['question'] = d['input']
+
+            qas['context'] = d['context']
+            qas['answers'] = d['answers']
+            qas['length'] = d['length']
+            qas['dataset'] = d['dataset']
+            qas['all_classes'] = d['all_classes']
+            qas['_id'] = d['_id']
 
             process_context(qas, tokenizer, max_textlength, args)
 
@@ -296,7 +234,7 @@ def main(args):
         total_time += time() - t
         log.write(f"{dataname}: {time()-t:.3f}s (total: {total_time:.3f}s)\n")
         log.flush()
-        output_path = f'../eun_FiD/open_domain_data/{args.version}/longbench_{dataname}_{split}.json'
+        output_path = f'data/{args.version}/longbench_{dataname}_{split}.json'
         if not os.path.exists(os.path.dirname(output_path)):
             os.makedirs(os.path.dirname(output_path), exist_ok=True)
         with open(output_path, 'w') as f:

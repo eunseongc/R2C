@@ -1,0 +1,8 @@
+datasets==3.2.0
+nltk==3.8.1
+numpy @ file:///work/mkl/numpy_and_numpy_base_1682953417311/work
+tiktoken==0.8.0
+transformers==4.29.2
+xopen==2.0.2
+fuzzywuzzy==0.18.0
+rouge==1.0.1

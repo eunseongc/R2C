@@ -45,12 +45,13 @@ class Dataset(torch.utils.data.Dataset):
     def __getitem__(self, index):
         example = self.data[index]
         
-        ex_question = ""
-        # ex_question = example['question']
-        # ex_question_tokens = self.t5_tok.tokenize(ex_question)
-        # if len(ex_question_tokens) > 100:
-        #     print(f">> Long question: {example['id']} >> {len(ex_question_tokens)}")
-        #     ex_question = self.t5_tok.convert_tokens_to_string(ex_question_tokens[-100:])
+        # ex_question = ""
+        
+        ex_question = example['question']
+        ex_question_tokens = self.t5_tok.tokenize(ex_question)
+        if len(ex_question_tokens) > 100:
+            print(f">> Long question: {example['id']} >> {len(ex_question_tokens)}")
+            ex_question = self.t5_tok.convert_tokens_to_string(ex_question_tokens[-100:])
 
         question = self.question_prefix + " " + ex_question
 
@@ -125,14 +126,7 @@ def encode_passages(batch_text_passages, tokenizer, max_length):
             padding='longest',
             return_tensors='pt',
         )
-        # p = tokenizer.batch_encode_plus(
-        #     text_passages,
-        #     max_length=max_length,
-        #     truncation=True,
-        #     padding='max_length',
-        #     return_tensors='pt',
-        # )
-        
+
         passage_ids.append(p['input_ids'][None])
         passage_masks.append(p['attention_mask'][None])
 
@@ -221,11 +215,7 @@ class Collator(object):
 
 def load_data(data_path=None, global_rank=-1, world_size=-1, n_qas=None):
     assert data_path
-    # if data_path.endswith('.jsonl'):
-    #     data = open(data_path, 'r')
-    # elif data_path.endswith('.json'):
-    #     with open(data_path, 'r') as fin:
-    #         data = json.load(fin)
+
     with open(data_path, 'r') as fin:
         data = json.load(fin)    
     if n_qas is not None:
@@ -241,8 +231,5 @@ def load_data(data_path=None, global_rank=-1, world_size=-1, n_qas=None):
             example['id'] = k
 
         examples.append(example)
-    ## egrave: is this needed?
-    if data_path is not None and data_path.endswith('.jsonl'):
-        data.close()
 
     return examples

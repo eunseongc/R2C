@@ -40,7 +40,6 @@ class Options():
         self.parser.add_argument('--write_crossattention_scores', action='store_true', 
                         help='save dataset with cross-attention scores')
         self.parser.add_argument('--token_scores_path', type=str, default=None, help='path to save token scores (cross-attention scores)')
-        self.parser.add_argument('--output_version', type=str, default=None, help='input version')
         self.parser.add_argument('--cut_offs', type=list, default=[1, 2, 3, 5, 10, 20], help='cutoffs for recall')
         self.parser.add_argument('--pseudo_question', type=str, default="")
         self.parser.add_argument('--last_layer_only', type=bool, default=False, help='Use only last decoder layer to calculate token scores')
@@ -59,8 +58,7 @@ class Options():
                         help='maximum number of tokens used to train the model, no truncation if -1')
         self.parser.add_argument('--no_title', action='store_true', 
                         help='article titles not included in passages')
-        self.parser.add_argument('--n_contexts', type=int, default=20)
-        self.parser.add_argument('--sce_n_contexts', type=int, default=None)
+        self.parser.add_argument('--n_contexts', type=int, default=None)
         self.parser.add_argument('--ctx_anno', type=str, default='has_answer', help="e.g., has_answer, mytho")
         self.parser.add_argument('--n_qas', type=int, default=None)
         self.parser.add_argument('--n_extra_contexts', type=int, default=10)
@@ -76,8 +74,6 @@ class Options():
         self.parser.add_argument('--replace_bos_token', action='store_true', default=False)
         self.parser.add_argument('--use_local_interaction', action='store_true', default=False)
         self.parser.add_argument('--use_task_weight', action='store_true', default=False)
-
-        
 
     def initialize_parser(self):
         # basic parameters
