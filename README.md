@@ -95,7 +95,7 @@ source scripts/score_and_compress_longbench.sh 0 checkpoints_fid/nq_20_0/checkpo
 ```
 - `0`: GPU index (change if needed)  
 - `checkpoints_fid/nq_20_0/checkpoint/best_dev`: Path to the FiD checkpoint  
-- `128_gpt_s_d_a64`: Example label for your configuration (feel free to rename)
+- `128_gpt_s_d_a64`: Example label for the configuration (feel free to rename)
 
 ### 3.3 Predict with Compressed Prompts on LongBench
 ```bash
