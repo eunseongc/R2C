@@ -12,8 +12,7 @@ import torch.distributed as dist
 import torch.multiprocessing as mp
 
 import huggingface_hub
-# huggingface_hub.login(token = None) ## Input your token here
-huggingface_hub.login(token="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") ## Input your token here
+huggingface_hub.login(token="") ## Input your token here
 
 DATASET2PROMPT = {
     "narrativeqa": "You are given a story, which can be either a novel or a movie script, and a question. Answer the question asconcisely as you can, using a single phrase if possible. Do not provide any explanation.\n\nStory: {compressed_prompt}\n\nAnswer:",

@@ -2,37 +2,66 @@
 """
 This code is based on the code from lost-in-the-middle repo ("https://github.com/nelson-liu/lost-in-the-middle")
 """
-
-import re
-import argparse
-import dataclasses
+import sys
 import json
+import regex
+import torch
+import string
+import random
 import logging
 import pathlib
-import random
-import sys
-from copy import deepcopy
+import argparse
+import statistics
+import dataclasses
 
-import torch
+from copy import deepcopy
 from tqdm import tqdm
 from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
 from xopen import xopen
 from typing import List, Optional, Type, TypeVar
 
-T = TypeVar("T")
+logger = logging.getLogger(__name__)
+random.seed(0)
 
-QA_PROMPT="""Write a high-quality answer for the given question using only the provided search results (some of which might be irrelevant).
+import huggingface_hub
+huggingface_hub.login(token="") ## Please fill in your own token
 
-{search_results}
 
-Question: {question}
-Answer:"""
+def normalize_answer(s: str) -> str:
+    """Normalization from the SQuAD evaluation script.
 
-CLOSED_QA_PROMPT="""Question: {question}
-Answer:"""
+    See https://worksheets.codalab.org/rest/bundles/0x6b567e1cf2e041ec80d7098f031c5c9e/contents/blob/
+    """
 
-@dataclass(frozen=True)
+    def remove_articles(text):
+        return regex.sub(r"\b(a|an|the)\b", " ", text)
+
+    def white_space_fix(text):
+        return " ".join(text.split())
+
+    def remove_punc(text):
+        exclude = set(string.punctuation)
+        return "".join(ch for ch in text if ch not in exclude)
+
+    def lower(text):
+        return text.lower()
+
+    return white_space_fix(remove_articles(remove_punc(lower(s))))
+
+
+def best_subspan_em(prediction: str, ground_truths: List[str]) -> float:
+    normalized_prediction = normalize_answer(prediction)
+
+    for ground_truth in ground_truths:
+        normalized_ground_truth = normalize_answer(ground_truth)
+        if normalized_ground_truth.lower() in normalized_prediction.lower():
+            return 1.0
+    return 0.0
+
+def exact_match_score(prediction, ground_truth):
+    return normalize_answer(prediction) == normalize_answer(ground_truth)
+
 class Document:
     title: str
     text: str
@@ -46,7 +75,7 @@ class Document:
     original_retrieval_index: Optional[int] = None
 
     @classmethod
-    def from_dict(cls: Type[T], data: dict) -> T:
+    def from_dict(cls, data):
         data = deepcopy(data)
         if not data:
             raise ValueError("Must provide data for creation of Document from dict.")
@@ -75,34 +104,48 @@ def get_qa_prompt(
 def get_closedbook_qa_prompt(question: str):
     if not question:
         raise ValueError(f"Provided `question` must be truthy, got: {question}")
-    with open(PROMPTS_ROOT / "closedbook_qa.prompt") as f:
-        prompt_template = f.read().rstrip("\n")
 
-    return prompt_template.format(question=question)
+    return CLOSED_QA_PROMPT.format(question=question)
 
 
 
-logger = logging.getLogger(__name__)
-random.seed(0)
 
-import huggingface_hub
-huggingface_hub.login(token="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")
-# huggingface_hub.login(token="") ## Please fill in your own token
+
+
+
+
+
+############################################################################
+METRICS = [
+    (best_subspan_em, "best_subspan_em"),
+]
+T = TypeVar("T")
+
+QA_PROMPT="""Write a high-quality answer for the given question using only the provided search results (some of which might be irrelevant).
+
+{search_results}
+
+Question: {question}
+Answer:"""
+
+CLOSED_QA_PROMPT="""Question: {question}
+Answer:"""
+############################################################################
 
 
 def main(
     input_path,
-    is_compressed,
+    compressed,
     model_name,
     temperature,
     top_p,
     closedbook,
     num_gpus,
-    max_new_tokens,
-    max_prompt_length,
     hf_cache_path,
     output_path,
-    ctxs_cutoff: int,
+    max_new_tokens,
+    max_prompt_length,
+    n_psgs: int,
 ):
     # Create directory for output path if it doesn't exist.
     pathlib.Path(output_path).parent.mkdir(parents=True, exist_ok=True)
@@ -124,14 +167,16 @@ def main(
             # Get the prediction for the input example
             question = input_example["question"]
             documents = []
-            if is_compressed:
+            if compressed:
                 prompt = input_example["compressed_prompt"]
             else:
                 if closedbook:
-                    pass
+                    prompt = get_closedbook_qa_prompt(
+                        question
+                    )
                 else:
-                    if ctxs_cutoff is not None:
-                        input_example["ctxs"] = input_example["ctxs"][:ctxs_cutoff]
+                    if n_psgs is not None:
+                        input_example["ctxs"] = input_example["ctxs"][:n_psgs]
                         
                     for ctx in deepcopy(input_example["ctxs"]):
                         documents.append(Document.from_dict(ctx))
@@ -139,11 +184,6 @@ def main(
                     if not documents:
                         raise ValueError(f"Did not find any documents for example: {input_example}")
 
-                if closedbook:
-                    prompt = get_closedbook_qa_prompt(
-                        question
-                    )
-                else:
                     prompt = get_qa_prompt(
                         question,
                         documents,
@@ -186,6 +226,7 @@ def main(
     raw_responses = model.generate(prompts, sampling_params)
     responses = [output.outputs[0].text.strip() for output in raw_responses]
 
+    all_example_metrics = []
     with xopen(output_path, "w") as f:
         for example, model_documents, prompt, response in zip(examples, all_model_documents, prompts, responses):
             output_example = deepcopy(example)
@@ -197,12 +238,25 @@ def main(
             output_example["model_temperature"] = temperature
             output_example["model_top_p"] = top_p
             f.write(json.dumps(output_example) + "\n")
+            all_example_metrics.append(get_metrics_for_example(output_example))
+    
+    for (_, metric_name) in METRICS:
+        average_metric_value = statistics.mean(
+            example_metrics[metric_name] * 100 for (example_metrics, _) in all_example_metrics
+        )
+        logger.info(f"{metric_name}: {average_metric_value}")
 
 
-def chunks(lst, n):
-    """Yield successive n-sized chunks from lst."""
-    for i in range(0, len(lst), n):
-        yield lst[i : i + n]
+def get_metrics_for_example(example):
+    if example.get("answers") is None:
+        example["answers"] = example["answer"]
+    gold_answers = example["answers"]
+    model_answer = example["model_answer"]
+
+    example_metrics = {}
+    for (metric, metric_name) in METRICS:
+        example_metrics[metric_name] = metric(prediction=model_answer, ground_truths=gold_answers)
+    return (example_metrics, example)
 
 
 def format_chat_prompt(message: str):
@@ -221,8 +275,8 @@ def format_chat_prompt(message: str):
 if __name__ == "__main__":
     logging.basicConfig(format="%(asctime)s - %(module)s - %(levelname)s - %(message)s", level=logging.INFO)
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input-path", help="Path to data with questions and documents to use.", required=True)
-    parser.add_argument("--is-compressed", help="Whether the input is compressed", type=bool, default=False)
+    parser.add_argument("--input_path", help="Path to data with questions and documents to use.", required=True)
+    parser.add_argument("--compressed", help="Whether the input is compressed", action="store_true", default=False)
     parser.add_argument(
         "--model",
         help="Model to use in generating responses",
@@ -233,27 +287,27 @@ if __name__ == "__main__":
         ],
     )
     parser.add_argument("--temperature", help="Temperature to use in generation", type=float, default=0.0)
-    parser.add_argument("--top-p", help="Top-p to use in generation", type=float, default=1.0)
+    parser.add_argument("--top_p", help="Top-p to use in generation", type=float, default=1.0)
     parser.add_argument(
         "--closedbook", action="store_true", help="Run the model in closed-book mode (i.e., don't use documents)."
     )
 
-    parser.add_argument("--num-gpus", help="Number of GPUs to use", type=int, default=1)
-    parser.add_argument("--hf-cache-path", help="Path to huggingface cache to use.")
-    parser.add_argument("--output-path", help="Path to write output file of generated responses", required=True)
+    parser.add_argument("--num_gpus", help="Number of GPUs to use", type=int, default=1)
+    parser.add_argument("--hf_cache_path", help="Path to huggingface cache to use.")
+    parser.add_argument("--output_path", help="Path to write output file of generated responses", required=True)
     parser.add_argument(
-        "--max-new-tokens",
+        "--max_new_tokens",
         help="Maximum number of new tokens to generate",
         type=int,
         default=100,
     )
     parser.add_argument(
-        "--max-prompt-length",
+        "--max_prompt_length",
         help="Maximum number of tokens in the prompt. Longer prompts will be skipped.",
         type=int,
         default=4096,
     )
-    parser.add_argument("--ctxs-cutoff", help="ctxs_cutoff", type=int, default=None)
+    parser.add_argument("--n_psgs", help="n_psgs", type=int, default=None)
     
     
     args = parser.parse_args()
@@ -261,16 +315,16 @@ if __name__ == "__main__":
     logger.info("running %s", " ".join(sys.argv))
     main(
         args.input_path,
-        args.is_compressed,
+        args.compressed,
         args.model,
         args.temperature,
         args.top_p,
         args.closedbook,
         args.num_gpus,
-        args.max_new_tokens,
-        args.max_prompt_length,
         args.hf_cache_path,
         args.output_path,
-        args.ctxs_cutoff,
+        args.max_new_tokens,
+        args.max_prompt_length,
+        args.n_psgs,
     )
     logger.info("finished running %s", sys.argv[0])

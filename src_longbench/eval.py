@@ -49,7 +49,6 @@ dataset2numsample = {
 
 def parse_args(args=None):
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', type=str, default=None)
     parser.add_argument('--input_dir', type=str, default=None, help="input directory to evaluate", required=False)
     return parser.parse_args(args)
 
@@ -124,5 +123,20 @@ if __name__ == '__main__':
 
     ## Reorder the scores in the order of the dataset_ordered;
     scores = {k: scores[k] for k in dataset_ordered if scores.get(k) is not None}
+
+    groups = {
+        "SingleDoc": ["narrativeqa", "qasper", "multifieldqa_en"],
+        "MultiDoc": ["hotpotqa", "2wikimqa", "musique"],
+        "Summarization": ["gov_report", "qmsum", "multi_news"],
+        "FewShot": ["trec", "triviaqa", "samsum"],
+        "Code": ["lcc", "repobench-p"],
+    }
+    for group, datasets in groups.items():
+        group_scores = [scores[dataset] for dataset in datasets]
+        num_samples = [dataset2numsample[dataset] for dataset in datasets]
+        group_mean = round(np.average(group_scores, weights=num_samples), 2)
+        scores[group] = group_mean
+        print(f"> {group}:", group_mean)
+
     with open(out_path, "w") as f:
         json.dump(scores, f, ensure_ascii=False, indent=4)
