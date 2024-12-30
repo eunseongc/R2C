@@ -134,7 +134,7 @@ source pred_and_eval_nq.sh
 If you find this repository or our work useful, please cite:
 
 ```bibtex
-@inproceedings{ChoiLL24,
+@inproceedings{ChoiLCPL24,
   author    = {Eunseong Choi and
                Sunkyung Lee and
                Minjin Choi and
