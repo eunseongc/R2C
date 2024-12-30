@@ -25,13 +25,7 @@ import src_fid.data
 import src_fid.model
 from src_fid.ResultTable import ResultTable
 
-from scipy.sparse import csc_matrix
-from torch.nn import CrossEntropyLoss
-from sklearn import metrics
 from rouge import Rouge
-
-import wandb
-os.environ['WANDB_API_KEY'] = "01e2c25c291441f9d7a138a24249bd2b5e39eb8f"
 
 def train(model, optimizer, scheduler, checkpoint_step, train_dataset, eval_dataset, opt, collator, best_dev_em, checkpoint_path):
     if opt.is_main:
@@ -40,22 +34,6 @@ def train(model, optimizer, scheduler, checkpoint_step, train_dataset, eval_data
         except:
             tb_logger = None
 
-        # wandb_name = f'{time.strftime("%Y%m%d-%H%M%S")}_{opt.name}'
-        # wandb_tag = opt.wandb_tag if opt.wandb_tag is not None else []
-        # wandb.init(
-        #     project="fid",
-        #     name=wandb_name,
-        #     entity="eunseong",
-        #     settings=wandb.Settings(save_code=True, code_dir='.'),
-        #     config={"train_data": opt.train_data,
-        #             "eval_data": opt.eval_data,
-        #             "lr": opt.lr,
-        #             "per_gpu_batch_size": opt.per_gpu_batch_size,
-        #             "accumulation_steps": opt.accumulation_steps,
-        #             "text_maxlength": opt.text_maxlength,
-        #             "n_contexts": opt.n_contexts,
-        #     tags=wandb_tag
-        # )
     torch.manual_seed(opt.global_rank + opt.seed) #different seed for different sampling depending on global_rank
     train_sampler = RandomSampler(train_dataset)
     train_dataloader = DataLoader(
@@ -91,11 +69,6 @@ def train(model, optimizer, scheduler, checkpoint_step, train_dataset, eval_data
             )
 
             loss_weight = 1.0
-            if opt.use_task_weight:
-                if task == 'qa':
-                    loss_weight = 2.313
-                else:
-                    loss_weight = 0.638
 
             train_loss = loss_weight * outputs[0]
             
@@ -150,7 +123,6 @@ def train(model, optimizer, scheduler, checkpoint_step, train_dataset, eval_data
 
                     src_fid.util.save(model, optimizer, scheduler, step, best_dev_em, opt, checkpoint_path, f"step-{step}")
 
-            # wandb.log(wandb_log)
             if step > opt.total_steps:
                 pbar.close()
                 break
