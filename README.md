@@ -10,7 +10,7 @@ This repository contains the official implementation for our EMNLP 2024 Findings
 
 ## Overview
 
-Our goal is to compress large input contexts (prompts) by leveraging multi-document reader models (e.g., FiD). This method reduces token costs while preserving the key information needed for downstream tasks such as question answering.
+Reading To Compression (R2C) aims to compress large input contexts (prompts) by leveraging multi-document reader models (e.g., FiD). It reduces token costs while preserving the key information needed for downstream tasks such as question answering.
 
 In this repository, you will find:
 
