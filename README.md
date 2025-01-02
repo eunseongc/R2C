@@ -75,7 +75,7 @@ After downloading, unzip the checkpoint folder and place the data appropriately.
 > - If you prefer, you can use FiD checkpoints from the original [FiD repository](https://github.com/facebookresearch/FiD).  
 > - You can also train FiD yourself using `train_fid.py`.  
 > - To run LLama2 models, you **must** include your HuggingFace token in two files:  
->   - `LLM_inferenc.py`  
+>   - `R2C/LLM_inferenc.py`  
 >   - `R2C/src_longbench/pred.py`  
 
 ---
