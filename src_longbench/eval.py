@@ -133,8 +133,7 @@ if __name__ == '__main__':
     }
     for group, datasets in groups.items():
         group_scores = [scores[dataset] for dataset in datasets]
-        num_samples = [dataset2numsample[dataset] for dataset in datasets]
-        group_mean = round(np.average(group_scores, weights=num_samples), 2)
+        group_mean = round(np.average(group_scores), 2)
         scores[group] = group_mean
         print(f"> {group}:", group_mean)
 

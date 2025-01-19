@@ -46,7 +46,6 @@ class Dataset(torch.utils.data.Dataset):
         example = self.data[index]
         
         # ex_question = ""
-        
         ex_question = example['question']
         ex_question_tokens = self.t5_tok.tokenize(ex_question)
         if len(ex_question_tokens) > 100:
